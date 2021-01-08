@@ -76,14 +76,18 @@ final class Callback
         $type = $argument->getType();
 
         if (!$type && \array_key_exists(null, $this->typeReplace)) {
-            return $this->typeReplace[null];
+            return $this->typeReplace[null] instanceof \Closure ? $this->typeReplace[null]() : $this->typeReplace[null];
         }
 
         if (!$type instanceof \ReflectionNamedType) {
-            throw new \TypeError("Unable to replace argument \"{$argument->getName()}\".");
+            throw new \TypeError("Unable to replace argument \"{$argument->getName()}\". No replaceUntypedArgument set.");
         }
 
         foreach (\array_keys($this->typeReplace) as $typehint) {
+            if ($type->isBuiltin() && $typehint === $type->getName()) {
+                return $this->typeReplace[$typehint];
+            }
+
             if (!\is_a($type->getName(), $typehint, true)) {
                 continue;
             }
