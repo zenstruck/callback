@@ -18,6 +18,7 @@ final class CallbackTest extends TestCase
         $actual = Callback::createFor('strtoupper')
             ->minArguments(1)
             ->replaceUntypedArgument('foobar')
+            ->replaceTypedArgument('string', 'foobar')
             ->execute()
         ;
 
