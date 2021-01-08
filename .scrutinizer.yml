@@ -1,0 +1,9 @@
+filter:
+  dependency_paths: [vendor/]
+checks:
+  php: true
+  nodes:
+    analysis:
+      tests:
+        override:
+          - php-scrutinizer-run
