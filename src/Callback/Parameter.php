@@ -27,6 +27,11 @@ abstract class Parameter
         return new UntypedParameter($value);
     }
 
+    final public static function factory(callable $factory): ValueFactory
+    {
+        return new ValueFactory($factory);
+    }
+
     /**
      * @return mixed
      *

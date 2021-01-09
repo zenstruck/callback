@@ -6,7 +6,6 @@ use PHPUnit\Framework\TestCase;
 use Zenstruck\Callback;
 use Zenstruck\Callback\Exception\UnresolveableArgument;
 use Zenstruck\Callback\Parameter;
-use Zenstruck\Callback\ValueFactory;
 
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
@@ -131,7 +130,7 @@ final class CallbackTest extends TestCase
             ];
         };
         $factoryArgs = [];
-        $factory = new ValueFactory(static function($arg) use (&$factoryArgs) {
+        $factory = Parameter::factory(static function($arg) use (&$factoryArgs) {
             $factoryArgs[] = $arg;
 
             if ($arg) {
