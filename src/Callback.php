@@ -2,6 +2,9 @@
 
 namespace Zenstruck;
 
+use Zenstruck\Callback\Exception\UnresolveableArgument;
+use Zenstruck\Callback\Parameter;
+
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
  */
@@ -9,12 +12,6 @@ final class Callback
 {
     /** @var \ReflectionFunction */
     private $function;
-
-    /** @var int */
-    private $minArguments = 0;
-
-    /** @var array */
-    private $typeReplace = [];
 
     private function __construct(\ReflectionFunction $function)
     {
@@ -37,68 +34,65 @@ final class Callback
         return new self($value);
     }
 
-    public function minArguments(int $min): self
+    /**
+     * Invoke the callable with the passed arguments. Arguments of type
+     * Zenstruck\Callback\Parameter are resolved before invoking.
+     *
+     * @param mixed ...$arguments
+     *
+     * @return mixed
+     *
+     * @throws UnresolveableArgument
+     */
+    public function invoke(...$arguments)
     {
-        $this->minArguments = $min;
+        $parameters = $this->function->getParameters();
 
-        return $this;
-    }
+        foreach ($arguments as $key => $argument) {
+            if (!$argument instanceof Parameter) {
+                continue;
+            }
 
-    public function replaceTypedArgument(string $typehint, $value): self
-    {
-        $this->typeReplace[$typehint] = $value;
+            if (!\array_key_exists($key, $parameters)) {
+                throw new \ArgumentCountError(\sprintf('No argument %d for callable. Expected type: "%s".', $key + 1, $argument->type()));
+            }
 
-        return $this;
-    }
-
-    public function replaceUntypedArgument($value): self
-    {
-        $this->typeReplace[null] = $value;
-
-        return $this;
-    }
-
-    public function execute()
-    {
-        $arguments = $this->function->getParameters();
-
-        if (\count($arguments) < $this->minArguments) {
-            throw new \ArgumentCountError("{$this->minArguments} argument(s) required.");
+            try {
+                $arguments[$key] = $argument->resolve($parameters[$key]);
+            } catch (UnresolveableArgument $e) {
+                throw new UnresolveableArgument(\sprintf('Unable to resolve argument %d for callback. Expected type: "%s".', $key + 1, $argument->type()), $e);
+            }
         }
-
-        $arguments = \array_map([$this, 'replaceArgument'], $arguments);
 
         return $this->function->invoke(...$arguments);
     }
 
-    private function replaceArgument(\ReflectionParameter $argument)
+    /**
+     * Invoke the callable using the passed Parameter to resolve all callable
+     * arguments.
+     *
+     * @param int $min Enforce a minimum number of arguments the callable must have
+     *
+     * @return mixed
+     *
+     * @throws UnresolveableArgument
+     */
+    public function invokeAll(Parameter $parameter, int $min = 0)
     {
-        $type = $argument->getType();
+        $arguments = $this->function->getParameters();
 
-        if (!$type && \array_key_exists(null, $this->typeReplace)) {
-            return $this->typeReplace[null] instanceof \Closure ? $this->typeReplace[null]() : $this->typeReplace[null];
+        if (\count($arguments) < $min) {
+            throw new \ArgumentCountError("{$min} argument(s) of type \"{$parameter->type()}\" required.");
         }
 
-        if (!$type instanceof \ReflectionNamedType) {
-            throw new \TypeError("Unable to replace argument \"{$argument->getName()}\". No replaceUntypedArgument set.");
+        foreach ($arguments as $key => $argument) {
+            try {
+                $arguments[$key] = $parameter->resolve($argument);
+            } catch (UnresolveableArgument $e) {
+                throw new UnresolveableArgument(\sprintf('Unable to resolve argument %d for callback. Expected type: "%s"', $key + 1, $parameter->type()), $e);
+            }
         }
 
-        foreach (\array_keys($this->typeReplace) as $typehint) {
-            if ($type->isBuiltin() && $typehint === $type->getName()) {
-                return $this->typeReplace[$typehint];
-            }
-
-            if (!\is_a($type->getName(), $typehint, true)) {
-                continue;
-            }
-
-            if (!($value = $this->typeReplace[$typehint]) instanceof \Closure) {
-                return $value;
-            }
-
-            return $value($type->getName());
-        }
-
-        throw new \TypeError("Unable to replace argument \"{$argument->getName()}\".");
+        return $this->function->invoke(...$arguments);
     }
 }

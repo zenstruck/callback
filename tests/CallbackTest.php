@@ -4,6 +4,9 @@ namespace Zenstruck\Callback\Tests;
 
 use PHPUnit\Framework\TestCase;
 use Zenstruck\Callback;
+use Zenstruck\Callback\Exception\UnresolveableArgument;
+use Zenstruck\Callback\Parameter;
+use Zenstruck\Callback\ValueFactory;
 
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
@@ -13,55 +16,48 @@ final class CallbackTest extends TestCase
     /**
      * @test
      */
-    public function can_execute_string_callbacks(): void
+    public function create_must_be_callable(): void
     {
-        $actual = Callback::createFor('strtoupper')
-            ->minArguments(1)
-            ->replaceUntypedArgument('foobar')
-            ->replaceTypedArgument('string', 'foobar')
-            ->execute()
-        ;
+        $this->expectException(\InvalidArgumentException::class);
 
-        $this->assertSame('FOOBAR', $actual);
+        Callback::createFor('not a callable');
     }
 
     /**
      * @test
      */
-    public function can_execute_closures(): void
+    public function invoke_all_can_enforce_min_arguments(): void
     {
-        $actual = Callback::createFor(function($string) { return \mb_strtoupper($string); })
-            ->minArguments(1)
-            ->replaceUntypedArgument('foobar')
-            ->execute()
-        ;
-
-        $this->assertSame('FOOBAR', $actual);
-    }
-
-    /**
-     * @test
-     */
-    public function can_enforce_min_arguments(): void
-    {
-        $callback = Callback::createFor(function() { return 'ret'; })
-            ->minArguments(1)
-        ;
+        $callback = Callback::createFor(function() { return 'ret'; });
 
         $this->expectException(\ArgumentCountError::class);
 
-        $callback->execute();
+        $callback->invokeAll(Parameter::untyped('foo'), 1);
     }
 
     /**
      * @test
      */
-    public function can_replace_primitive_typehints(): void
+    public function invoke_all_with_no_arguments(): void
     {
-        $actual = Callback::createFor(function(string $string) { return \mb_strtoupper($string); })
-            ->minArguments(1)
-            ->replaceTypedArgument('string', 'foobar')
-            ->execute()
+        $actual = Callback::createFor(function() { return 'ret'; })
+            ->invokeAll(Parameter::untyped('foo'))
+        ;
+
+        $this->assertSame('ret', $actual);
+    }
+
+    /**
+     * @test
+     */
+    public function invoke_all_with_string_callable(): void
+    {
+        $actual = Callback::createFor('strtoupper')
+            ->invokeAll(Parameter::union(
+                Parameter::untyped('foobar'),
+                Parameter::typed('string', 'foobar')
+            )
+        )
         ;
 
         $this->assertSame('FOOBAR', $actual);
@@ -70,7 +66,31 @@ final class CallbackTest extends TestCase
     /**
      * @test
      */
-    public function can_replace_class_argument(): void
+    public function invoke_all_untyped_argument(): void
+    {
+        $actual = Callback::createFor(function($string) { return \mb_strtoupper($string); })
+            ->invokeAll(Parameter::untyped('foobar'))
+        ;
+
+        $this->assertSame('FOOBAR', $actual);
+    }
+
+    /**
+     * @test
+     */
+    public function invoke_all_primitive_typed_argument(): void
+    {
+        $actual = Callback::createFor(function(string $string) { return \mb_strtoupper($string); })
+            ->invokeAll(Parameter::typed('string', 'foobar'))
+        ;
+
+        $this->assertSame('FOOBAR', $actual);
+    }
+
+    /**
+     * @test
+     */
+    public function invoke_all_class_arguments(): void
     {
         $object = new Object2();
         $function = static function(Object1 $object1, Object2 $object2, $object3) {
@@ -82,9 +102,10 @@ final class CallbackTest extends TestCase
         };
 
         $actual = Callback::createFor($function)
-            ->replaceTypedArgument(Object1::class, $object)
-            ->replaceUntypedArgument($object)
-            ->execute()
+            ->invokeAll(Parameter::union(
+                Parameter::untyped($object),
+                Parameter::typed(Object1::class, $object)
+            ))
         ;
 
         $this->assertSame(
@@ -100,7 +121,7 @@ final class CallbackTest extends TestCase
     /**
      * @test
      */
-    public function can_replace_class_typehint_with_factory(): void
+    public function invoke_all_class_arguments_value_factories(): void
     {
         $function = static function(Object1 $object1, Object2 $object2, $object3) {
             return [
@@ -110,22 +131,27 @@ final class CallbackTest extends TestCase
             ];
         };
         $factoryArgs = [];
-        $factory = static function($arg = null) use (&$factoryArgs) {
+        $factory = new ValueFactory(static function($arg) use (&$factoryArgs) {
             $factoryArgs[] = $arg;
 
-            return new Object2();
-        };
+            if ($arg) {
+                return new $arg();
+            }
+
+            return new Object1();
+        });
 
         $ret = Callback::createFor($function)
-            ->replaceTypedArgument(Object1::class, $factory)
-            ->replaceUntypedArgument($factory)
-            ->execute()
+            ->invokeAll(Parameter::union(
+                Parameter::untyped($factory),
+                Parameter::typed(Object1::class, $factory)
+            ))
         ;
 
         $this->assertSame(['object1', 'object2', 'object3'], \array_keys($ret));
-        $this->assertInstanceOf(Object2::class, $ret['object1']);
+        $this->assertInstanceOf(Object1::class, $ret['object1']);
         $this->assertInstanceOf(Object2::class, $ret['object2']);
-        $this->assertInstanceOf(Object2::class, $ret['object3']);
+        $this->assertInstanceOf(Object1::class, $ret['object3']);
         $this->assertSame(
             [Object1::class, Object2::class, null],
             $factoryArgs
@@ -135,39 +161,106 @@ final class CallbackTest extends TestCase
     /**
      * @test
      */
-    public function type_error_thrown_if_no_untyped_argument_defined(): void
+    public function invoke_all_unresolvable_parameter(): void
     {
-        $callback = Callback::createFor(static function($arg) {});
+        $callback = Callback::createFor(static function(Object1 $object1, Object2 $object2, Object3 $object3) {});
 
-        $this->expectException(\TypeError::class);
-        $this->expectExceptionMessage('No replaceUntypedArgument set');
+        $this->expectException(UnresolveableArgument::class);
+        $this->expectExceptionMessage('Unable to resolve argument 3 for callback. Expected type: "mixed|Zenstruck\Callback\Tests\Object1"');
 
-        $callback->execute();
+        $callback->invokeAll(Parameter::union(
+            Parameter::untyped(new Object1()),
+            Parameter::typed(Object1::class, new Object1())
+        ));
     }
 
     /**
      * @test
      */
-    public function type_error_thrown_if_type_argument_not_defined(): void
+    public function invoke_with_no_args(): void
     {
-        $callback = Callback::createFor(static function(Object2 $object1) {})
-            ->replaceTypedArgument(\stdClass::class, new \stdClass())
+        $actual = Callback::createFor(function() { return 'ret'; })
+            ->invoke()
         ;
 
-        $this->expectException(\TypeError::class);
-        $this->expectExceptionMessage('Unable to replace argument "object1"');
-
-        $callback->execute();
+        $this->assertSame('ret', $actual);
     }
 
     /**
      * @test
      */
-    public function create_must_be_callable(): void
+    public function invoke_with_resolvable_args(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $object = new Object2();
+        $function = static function(Object1 $object1, Object2 $object2, $object3, $extra) {
+            return [
+                'object1' => $object1,
+                'object2' => $object2,
+                'object3' => $object3,
+                'extra' => $extra,
+            ];
+        };
 
-        Callback::createFor('not a callable');
+        $actual = Callback::createFor($function)
+            ->invoke(
+                Parameter::typed(Object1::class, $object),
+                Parameter::typed(Object2::class, $object),
+                Parameter::untyped($object),
+                'value'
+            )
+        ;
+
+        $this->assertSame(
+            [
+                'object1' => $object,
+                'object2' => $object,
+                'object3' => $object,
+                'extra' => 'value',
+            ],
+            $actual
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function invoke_with_unresolvable_argument(): void
+    {
+        $object = new Object2();
+        $function = static function(Object1 $object1, $object2, $object3, $extra) {};
+
+        $this->expectException(UnresolveableArgument::class);
+        $this->expectExceptionMessage('Unable to resolve argument 2 for callback. Expected type: "Zenstruck\Callback\Tests\Object2"');
+
+        Callback::createFor($function)
+            ->invoke(
+                Parameter::typed(Object1::class, $object),
+                Parameter::typed(Object2::class, $object),
+                Parameter::untyped($object),
+                'value'
+            )
+        ;
+    }
+
+    /**
+     * @test
+     */
+    public function invoke_with_not_enough_required_arguments(): void
+    {
+        $object = new Object2();
+        $function = static function(Object1 $object1) {};
+
+        $this->expectException(\ArgumentCountError::class);
+        $this->expectExceptionMessage('No argument 2 for callable. Expected type: "Zenstruck\Callback\Tests\Object2"');
+
+        Callback::createFor($function)
+            ->invoke(
+                Parameter::typed(Object1::class, $object),
+                Parameter::typed(Object2::class, $object),
+                Parameter::untyped($object),
+                'value'
+            )
+        ;
     }
 }
 
@@ -176,5 +269,9 @@ class Object1
 }
 
 class Object2 extends Object1
+{
+}
+
+class Object3
 {
 }
