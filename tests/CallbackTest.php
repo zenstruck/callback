@@ -261,6 +261,18 @@ final class CallbackTest extends TestCase
             )
         ;
     }
+
+    /**
+     * @test
+     */
+    public function can_mark_invoke_parameter_arguments_as_optional(): void
+    {
+        $actual = Callback::createFor(static function() { return 'ret'; })
+            ->invoke(Parameter::typed('string', 'foobar')->optional())
+        ;
+
+        $this->assertSame('ret', $actual);
+    }
 }
 
 class Object1

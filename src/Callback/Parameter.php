@@ -12,6 +12,9 @@ use Zenstruck\Callback\Parameter\UntypedParameter;
  */
 abstract class Parameter
 {
+    /** @var bool */
+    private $optional = false;
+
     final public static function union(self ...$parameters): self
     {
         return new UnionParameter(...$parameters);
@@ -32,7 +35,16 @@ abstract class Parameter
         return new ValueFactory($factory);
     }
 
+    final public function optional(): self
+    {
+        $this->optional = true;
+
+        return $this;
+    }
+
     /**
+     * @internal
+     *
      * @return mixed
      *
      * @throws UnresolveableArgument
@@ -52,6 +64,14 @@ abstract class Parameter
         }
 
         return $value($type->getName());
+    }
+
+    /**
+     * @internal
+     */
+    final public function isOptional(): bool
+    {
+        return $this->optional;
     }
 
     abstract public function type(): string;
