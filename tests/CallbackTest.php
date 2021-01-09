@@ -272,6 +272,12 @@ final class CallbackTest extends TestCase
         ;
 
         $this->assertSame('ret', $actual);
+
+        $actual = Callback::createFor(static function(string $v) { return $v; })
+            ->invoke(Parameter::typed('string', 'foobar')->optional())
+        ;
+
+        $this->assertSame('foobar', $actual);
     }
 }
 

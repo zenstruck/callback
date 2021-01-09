@@ -53,11 +53,11 @@ final class Callback
                 continue;
             }
 
-            if (!\array_key_exists($key, $parameters) && !$argument->isOptional()) {
-                throw new \ArgumentCountError(\sprintf('No argument %d for callable. Expected type: "%s".', $key + 1, $argument->type()));
-            }
+            if (!\array_key_exists($key, $parameters)) {
+                if (!$argument->isOptional()) {
+                    throw new \ArgumentCountError(\sprintf('No argument %d for callable. Expected type: "%s".', $key + 1, $argument->type()));
+                }
 
-            if ($argument->isOptional()) {
                 $arguments[$key] = null;
 
                 continue;
