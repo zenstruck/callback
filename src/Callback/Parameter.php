@@ -41,7 +41,17 @@ abstract class Parameter
     {
         $value = $this->valueFor($parameter);
 
-        return $value instanceof ValueFactory ? $value($parameter->getType()) : $value;
+        if (!$value instanceof ValueFactory) {
+            return $value;
+        }
+
+        $type = $parameter->getType();
+
+        if (!$type instanceof \ReflectionNamedType) {
+            return $value(null);
+        }
+
+        return $value($type->getName());
     }
 
     abstract public function type(): string;
