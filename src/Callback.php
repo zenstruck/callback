@@ -18,6 +18,15 @@ final class Callback
         $this->function = $function;
     }
 
+    public function __toString(): string
+    {
+        if ($class = $this->function->getClosureScopeClass()) {
+            return "{$class->getName()}:{$this->function->getStartLine()}";
+        }
+
+        return $this->function->getName();
+    }
+
     /**
      * @param callable|\ReflectionFunction $value
      */

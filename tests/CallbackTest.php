@@ -279,6 +279,18 @@ final class CallbackTest extends TestCase
 
         $this->assertSame('foobar', $actual);
     }
+
+    /**
+     * @test
+     */
+    public function is_stringable(): void
+    {
+        $this->assertStringMatchesFormat(__CLASS__.':%d', (string) Callback::createFor(function() {}));
+        $this->assertStringMatchesFormat(__CLASS__.':%d', (string) Callback::createFor([$this, __METHOD__]));
+        $this->assertStringMatchesFormat(Object4::class.':%d', (string) Callback::createFor(new Object4()));
+        $this->assertStringMatchesFormat(Object4::class.':%d', (string) Callback::createFor([Object4::class, 'staticMethod']));
+        $this->assertSame(__NAMESPACE__.'\test_function', (string) Callback::createFor(__NAMESPACE__.'\test_function'));
+    }
 }
 
 class Object1
@@ -290,5 +302,20 @@ class Object2 extends Object1
 }
 
 class Object3
+{
+}
+
+class Object4
+{
+    public function __invoke()
+    {
+    }
+
+    public static function staticMethod()
+    {
+    }
+}
+
+function test_function()
 {
 }
