@@ -47,11 +47,12 @@ final class Callback
      * Invoke the callable with the passed arguments. Arguments of type
      * Zenstruck\Callback\Parameter are resolved before invoking.
      *
-     * @param mixed ...$arguments
+     * @param mixed|Parameter ...$arguments
      *
      * @return mixed
      *
-     * @throws UnresolveableArgument
+     * @throws \ArgumentCountError   If there is a argument count mismatch
+     * @throws UnresolveableArgument If the argument cannot be resolved
      */
     public function invoke(...$arguments)
     {
@@ -75,7 +76,7 @@ final class Callback
             try {
                 $arguments[$key] = $argument->resolve($parameters[$key]);
             } catch (UnresolveableArgument $e) {
-                throw new UnresolveableArgument(\sprintf('Unable to resolve argument %d for callback. Expected type: "%s".', $key + 1, $argument->type()), $e);
+                throw new UnresolveableArgument(\sprintf('Unable to resolve argument %d for callback. Expected type: "%s". (%s)', $key + 1, $argument->type(), $this), $e);
             }
         }
 
@@ -90,21 +91,22 @@ final class Callback
      *
      * @return mixed
      *
-     * @throws UnresolveableArgument
+     * @throws \ArgumentCountError   If the number of arguments is less than $min
+     * @throws UnresolveableArgument If the argument cannot be resolved
      */
     public function invokeAll(Parameter $parameter, int $min = 0)
     {
         $arguments = $this->function->getParameters();
 
         if (\count($arguments) < $min) {
-            throw new \ArgumentCountError("{$min} argument(s) of type \"{$parameter->type()}\" required.");
+            throw new \ArgumentCountError("{$min} argument(s) of type \"{$parameter->type()}\" required ({$this}).");
         }
 
         foreach ($arguments as $key => $argument) {
             try {
                 $arguments[$key] = $parameter->resolve($argument);
             } catch (UnresolveableArgument $e) {
-                throw new UnresolveableArgument(\sprintf('Unable to resolve argument %d for callback. Expected type: "%s"', $key + 1, $parameter->type()), $e);
+                throw new UnresolveableArgument(\sprintf('Unable to resolve argument %d for callback. Expected type: "%s". (%s)', $key + 1, $parameter->type(), $this), $e);
             }
         }
 
