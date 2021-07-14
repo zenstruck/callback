@@ -40,6 +40,9 @@ return (new PhpCsFixer\Config())
         'phpdoc_to_comment' => false,
         'function_declaration' => ['closure_function_spacing' => 'none'],
         'nullable_type_declaration_for_default_null_value' => true,
+
+        // temporary fix for union types (ref: https://github.com/FriendsOfPHP/PHP-CS-Fixer/issues/5495)
+        'binary_operator_spaces' => ['operators' => ['|' => null]],
     ])
     ->setRiskyAllowed(true)
     ->setFinder($finder)

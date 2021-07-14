@@ -49,21 +49,15 @@ abstract class Parameter
      *
      * @throws UnresolveableArgument
      */
-    final public function resolve(\ReflectionParameter $parameter)
+    final public function resolve(Argument $argument)
     {
-        $value = $this->valueFor($parameter);
+        $value = $this->valueFor($argument);
 
         if (!$value instanceof ValueFactory) {
             return $value;
         }
 
-        $type = $parameter->getType();
-
-        if (!$type instanceof \ReflectionNamedType) {
-            return $value(null);
-        }
-
-        return $value($type->getName());
+        return $value($argument);
     }
 
     /**
@@ -76,5 +70,5 @@ abstract class Parameter
 
     abstract public function type(): string;
 
-    abstract protected function valueFor(\ReflectionParameter $refParameter);
+    abstract protected function valueFor(Argument $argument);
 }

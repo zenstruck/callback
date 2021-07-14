@@ -2,6 +2,7 @@
 
 namespace Zenstruck\Callback\Parameter;
 
+use Zenstruck\Callback\Argument;
 use Zenstruck\Callback\Exception\UnresolveableArgument;
 use Zenstruck\Callback\Parameter;
 
@@ -27,11 +28,11 @@ final class UnionParameter extends Parameter
         return \implode('|', \array_map(static function(Parameter $param) { return $param->type(); }, $this->parameters));
     }
 
-    protected function valueFor(\ReflectionParameter $refParameter)
+    protected function valueFor(Argument $argument)
     {
         foreach ($this->parameters as $parameter) {
             try {
-                return $parameter->resolve($refParameter);
+                return $parameter->resolve($argument);
             } catch (UnresolveableArgument $e) {
                 continue;
             }
