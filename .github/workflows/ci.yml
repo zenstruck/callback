@@ -27,7 +27,7 @@ jobs:
         uses: ramsey/composer-install@v1
 
       - name: Test
-        run: vendor/bin/phpunit -v
+        run: vendor/bin/simple-phpunit -v
 
   code-coverage:
     name: Code Coverage
@@ -39,7 +39,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@2.7.0
         with:
-          php-version: 7.4
+          php-version: 8.0
           coverage: xdebug
           ini-values: xdebug.mode=coverage
 
@@ -47,7 +47,7 @@ jobs:
         uses: ramsey/composer-install@v1
 
       - name: Test with coverage
-        run: vendor/bin/phpunit -v --coverage-text --coverage-clover coverage.xml
+        run: vendor/bin/simple-phpunit -v --coverage-text --coverage-clover coverage.xml
 
       - name: Publish coverage report to Codecov
         uses: codecov/codecov-action@v1

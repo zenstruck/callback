@@ -2,6 +2,7 @@
 
 namespace Zenstruck\Callback\Parameter;
 
+use Zenstruck\Callback\Argument;
 use Zenstruck\Callback\Exception\UnresolveableArgument;
 use Zenstruck\Callback\Parameter;
 
@@ -22,9 +23,9 @@ final class UntypedParameter extends Parameter
         return 'mixed';
     }
 
-    protected function valueFor(\ReflectionParameter $parameter)
+    protected function valueFor(Argument $argument)
     {
-        if ($parameter->getType()) {
+        if ($argument->hasType()) {
             throw new UnresolveableArgument('Argument has type.');
         }
 

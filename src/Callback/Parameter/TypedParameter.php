@@ -2,6 +2,7 @@
 
 namespace Zenstruck\Callback\Parameter;
 
+use Zenstruck\Callback\Argument;
 use Zenstruck\Callback\Exception\UnresolveableArgument;
 use Zenstruck\Callback\Parameter;
 
@@ -25,15 +26,13 @@ final class TypedParameter extends Parameter
         return $this->type;
     }
 
-    protected function valueFor(\ReflectionParameter $parameter)
+    protected function valueFor(Argument $argument)
     {
-        $parameterType = $parameter->getType();
-
-        if (!$parameterType instanceof \ReflectionNamedType) {
+        if (!$argument->hasType()) {
             throw new UnresolveableArgument('Argument has no type.');
         }
 
-        if ($this->type === $parameterType->getName() || \is_a($parameterType->getName(), $this->type, true)) {
+        if ($argument->supports($this->type)) {
             return $this->value;
         }
 

@@ -2,13 +2,14 @@
 
 namespace Zenstruck;
 
+use Zenstruck\Callback\Argument;
 use Zenstruck\Callback\Exception\UnresolveableArgument;
 use Zenstruck\Callback\Parameter;
 
 /**
  * @author Kevin Bond <kevinbond@gmail.com>
  */
-final class Callback
+final class Callback implements \Countable
 {
     /** @var \ReflectionFunction */
     private $function;
@@ -56,16 +57,16 @@ final class Callback
      */
     public function invoke(...$arguments)
     {
-        $parameters = $this->function->getParameters();
+        $functionArgs = $this->arguments();
 
-        foreach ($arguments as $key => $argument) {
-            if (!$argument instanceof Parameter) {
+        foreach ($arguments as $key => $parameter) {
+            if (!$parameter instanceof Parameter) {
                 continue;
             }
 
-            if (!\array_key_exists($key, $parameters)) {
-                if (!$argument->isOptional()) {
-                    throw new \ArgumentCountError(\sprintf('No argument %d for callable. Expected type: "%s".', $key + 1, $argument->type()));
+            if (!\array_key_exists($key, $functionArgs)) {
+                if (!$parameter->isOptional()) {
+                    throw new \ArgumentCountError(\sprintf('No argument %d for callable. Expected type: "%s".', $key + 1, $parameter->type()));
                 }
 
                 $arguments[$key] = null;
@@ -74,9 +75,9 @@ final class Callback
             }
 
             try {
-                $arguments[$key] = $argument->resolve($parameters[$key]);
+                $arguments[$key] = $parameter->resolve($functionArgs[$key]);
             } catch (UnresolveableArgument $e) {
-                throw new UnresolveableArgument(\sprintf('Unable to resolve argument %d for callback. Expected type: "%s". (%s)', $key + 1, $argument->type(), $this), $e);
+                throw new UnresolveableArgument(\sprintf('Unable to resolve argument %d for callback. Expected type: "%s". (%s)', $key + 1, $parameter->type(), $this), $e);
             }
         }
 
@@ -96,11 +97,11 @@ final class Callback
      */
     public function invokeAll(Parameter $parameter, int $min = 0)
     {
-        $arguments = $this->function->getParameters();
-
-        if (\count($arguments) < $min) {
+        if (\count($this) < $min) {
             throw new \ArgumentCountError("{$min} argument(s) of type \"{$parameter->type()}\" required ({$this}).");
         }
+
+        $arguments = $this->arguments();
 
         foreach ($arguments as $key => $argument) {
             try {
@@ -111,5 +112,32 @@ final class Callback
         }
 
         return $this->function->invoke(...$arguments);
+    }
+
+    /**
+     * @return Argument[]
+     */
+    public function arguments(): array
+    {
+        return \array_map(
+            static function(\ReflectionParameter $parameter) {
+                return new Argument($parameter);
+            },
+            $this->function->getParameters()
+        );
+    }
+
+    public function argument(int $index): Argument
+    {
+        if (!isset(($arguments = $this->arguments())[$index])) {
+            throw new \OutOfRangeException(\sprintf('Argument %d does not exist for %s.', $index + 1, $this));
+        }
+
+        return $arguments[$index];
+    }
+
+    public function count(): int
+    {
+        return $this->function->getNumberOfParameters();
     }
 }
