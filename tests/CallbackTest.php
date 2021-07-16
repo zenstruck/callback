@@ -4,6 +4,7 @@ namespace Zenstruck\Callback\Tests;
 
 use PHPUnit\Framework\TestCase;
 use Zenstruck\Callback;
+use Zenstruck\Callback\Argument;
 use Zenstruck\Callback\Exception\UnresolveableArgument;
 use Zenstruck\Callback\Parameter;
 
@@ -290,6 +291,170 @@ final class CallbackTest extends TestCase
         $this->assertStringMatchesFormat(Object4::class.':%d', (string) Callback::createFor(new Object4()));
         $this->assertStringMatchesFormat(Object4::class.':%d', (string) Callback::createFor([Object4::class, 'staticMethod']));
         $this->assertSame(__NAMESPACE__.'\test_function', (string) Callback::createFor(__NAMESPACE__.'\test_function'));
+    }
+
+    /**
+     * @test
+     * @requires PHP >= 8.0
+     */
+    public function invoke_can_support_union_typehints(): void
+    {
+        // hack to allow test suite to run on php 7 w/o syntax errors
+        eval('$callback = fn(\Zenstruck\Callback\Tests\Object1|string $arg) => \'ret\';');
+
+        $this->assertSame('ret', Callback::createFor($callback)->invokeAll(Parameter::typed(Object1::class, new Object1())));
+        $this->assertSame('ret', Callback::createFor($callback)->invokeAll(Parameter::typed('string', 'value')));
+        $this->assertSame('ret', Callback::createFor($callback)->invoke(Parameter::typed(Object1::class, new Object1())));
+        $this->assertSame('ret', Callback::createFor($callback)->invoke(Parameter::typed('string', 'value')));
+    }
+
+    /**
+     * @test
+     */
+    public function can_get_callback_arguments(): void
+    {
+        $callback = Callback::createFor(function(Object1 $a, $b, string $c) {});
+
+        $this->assertSame(Object1::class, $callback->argument(0)->type());
+        $this->assertNull($callback->argument(1)->type());
+        $this->assertSame('string', $callback->argument(2)->type());
+        $this->assertSame(
+            [
+                Object1::class,
+                null,
+                'string',
+            ],
+            \array_map(function(Argument $a) { return $a->type(); }, $callback->arguments())
+        );
+    }
+
+    /**
+     * @test
+     * @requires PHP >= 8.0
+     */
+    public function can_get_union_callback_arguments(): void
+    {
+        // hack to allow test suite to run on php 7 w/o syntax errors
+        eval('$callback = fn(\Zenstruck\Callback\Tests\Object1|string $a, $b, string $c) => null;');
+        $callback = Callback::createFor($callback);
+
+        $this->assertSame(Object1::class.'|string', $callback->argument(0)->type());
+        $this->assertNull($callback->argument(1)->type());
+        $this->assertSame('string', $callback->argument(2)->type());
+        $this->assertSame(
+            [
+                Object1::class.'|string',
+                null,
+                'string',
+            ],
+            \array_map(function(Argument $a) { return $a->type(); }, $callback->arguments())
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function exception_thrown_when_trying_to_access_invalid_argument(): void
+    {
+        $this->expectException(\OutOfRangeException::class);
+
+        Callback::createFor(function() {})->argument(0);
+    }
+
+    /**
+     * @test
+     */
+    public function value_factory_injects_argument_if_type_hinted(): void
+    {
+        $callback = Callback::createFor(function(string $a, int $b, $c) { return [$a, $b, $c]; });
+        $factory = Parameter::factory(function(Argument $argument) {
+            if ($argument->supports('string')) {
+                return 'string';
+            }
+
+            if ($argument->supports('int')) {
+                return 17;
+            }
+
+            return 'invalid';
+        });
+
+        $ret = $callback->invokeAll(
+            Parameter::union(
+                Parameter::typed('string', $factory),
+                Parameter::typed('int', $factory),
+                Parameter::untyped($factory)
+            )
+        );
+
+        $this->assertSame(['string', 17, 'string'], $ret);
+    }
+
+    /**
+     * @test
+     */
+    public function can_use_value_factory_with_no_argument(): void
+    {
+        $ret = Callback::createFor(function($value) { return $value; })
+            ->invoke(Parameter::untyped(Parameter::factory(function() { return 'value'; })))
+        ;
+
+        $this->assertSame('value', $ret);
+    }
+
+    /**
+     * @test
+     * @requires PHP >= 8.0
+     */
+    public function value_factory_can_be_used_with_union_arguments_if_no_value_factory_argument(): void
+    {
+        // hack to allow test suite to run on php 7 w/o syntax errors
+        eval('$callback = fn(\Zenstruck\Callback\Tests\Object1|string $a) => $a;');
+
+        $ret = Callback::createFor($callback)
+            ->invoke(Parameter::typed('string', Parameter::factory(function() { return 'value'; })))
+        ;
+
+        $this->assertSame('value', $ret);
+    }
+
+    /**
+     * @test
+     * @requires PHP >= 8.0
+     */
+    public function value_factory_can_be_used_with_union_arguments_as_array(): void
+    {
+        $array = [];
+        $factory = Parameter::factory(function(array $types) use (&$array) {
+            $array = $types;
+
+            return 'value';
+        });
+
+        // hack to allow test suite to run on php 7 w/o syntax errors
+        eval('$callback = fn(\Zenstruck\Callback\Tests\Object1|string $a) => $a;');
+        $ret = Callback::createFor($callback)
+            ->invoke(Parameter::typed('string', $factory))
+        ;
+
+        $this->assertSame('value', $ret);
+        $this->assertSame([Object1::class, 'string'], $array);
+    }
+
+    /**
+     * @test
+     * @requires PHP >= 8.0
+     */
+    public function value_factory_cannot_accept_union_argument(): void
+    {
+        $this->expectException(\LogicException::class);
+
+        // hack to allow test suite to run on php 7 w/o syntax errors
+        eval('$callback = fn(\Zenstruck\Callback\Tests\Object1|string $a) => $a;');
+
+        Callback::createFor($callback)
+            ->invoke(Parameter::typed('string', Parameter::factory(function(string $type) { return $type; })))
+        ;
     }
 }
 
