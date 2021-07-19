@@ -456,6 +456,47 @@ final class CallbackTest extends TestCase
             ->invoke(Parameter::typed('string', Parameter::factory(function(string $type) { return $type; })))
         ;
     }
+
+    /**
+     * @test
+     */
+    public function argument_supports(): void
+    {
+        $callback1 = Callback::createFor(function(Object1 $object, string $string, $noType) {});
+        $callback2 = Callback::createFor(function(Object2 $object, string $string, $noType) {});
+
+        $this->assertTrue($callback1->argument(0)->supports(Object1::class));
+        $this->assertTrue($callback1->argument(0)->supports(Object2::class));
+        $this->assertFalse($callback1->argument(0)->supports('string'));
+        $this->assertFalse($callback1->argument(0)->supports(Object3::class));
+        $this->assertFalse($callback1->argument(0)->supports(Object2::class, Argument::EXACT));
+        $this->assertTrue($callback1->argument(1)->supports('string'));
+        $this->assertFalse($callback1->argument(1)->supports('int'));
+        $this->assertTrue($callback1->argument(2)->supports(Object1::class));
+        $this->assertTrue($callback1->argument(2)->supports(Object2::class));
+        $this->assertTrue($callback1->argument(2)->supports('string'));
+        $this->assertTrue($callback1->argument(2)->supports('string'));
+        $this->assertTrue($callback1->argument(2)->supports('int'));
+
+        $this->assertTrue($callback2->argument(0)->supports(Object1::class, Argument::EXACT|Argument::COVARIANCE|Argument::CONTRAVARIANCE));
+        $this->assertFalse($callback2->argument(0)->supports(Object3::class, Argument::EXACT|Argument::COVARIANCE|Argument::CONTRAVARIANCE));
+    }
+
+    /**
+     * @test
+     */
+    public function argument_supports_value(): void
+    {
+        $this->markTestIncomplete();
+    }
+
+    /**
+     * @test
+     */
+    public function resolved_contravariant_value_must_be_supported_by_argument(): void
+    {
+        $this->markTestIncomplete();
+    }
 }
 
 class Object1

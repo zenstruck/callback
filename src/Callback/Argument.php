@@ -7,6 +7,10 @@ namespace Zenstruck\Callback;
  */
 final class Argument
 {
+    public const EXACT = 2;
+    public const COVARIANCE = 4;
+    public const CONTRAVARIANCE = 8;
+
     /** @var \ReflectionNamedType[] */
     private $types = [];
 
@@ -49,15 +53,30 @@ final class Argument
         return \count($this->types) > 1;
     }
 
-    public function supports(string $type): bool
+    /**
+     * @param string   $type    The type to check if this argument supports
+     * @param int|null $options {@see EXACT} to only check if exact match
+     *                          {@see COVARIANCE} to check if exact or, if class, is instanceof argument type
+     *                          {@see CONTRAVARIANCE} to check if exact or, if class, argument type is instance of class
+     *                          Bitwise disjunction of above is allowed
+     */
+    public function supports(string $type, int $options = self::EXACT|self::COVARIANCE): bool
     {
         if (!$this->hasType()) {
             // no type-hint so any type is supported
             return true;
         }
 
-        foreach ($this->types() as $t) {
-            if ($t === $type || \is_a($t, $type, true)) {
+        foreach ($this->types() as $supportedType) {
+            if ($options & self::EXACT && $supportedType === $type) {
+                return true;
+            }
+
+            if ($options & self::COVARIANCE && \is_a($type, $supportedType, true)) {
+                return true;
+            }
+
+            if ($options & self::CONTRAVARIANCE && \is_a($supportedType, $type, true)) {
                 return true;
             }
         }
