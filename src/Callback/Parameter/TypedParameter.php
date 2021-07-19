@@ -26,7 +26,7 @@ final class TypedParameter extends Parameter
      * @param mixed|ValueFactory $value
      * @param int                $options {@see Argument::supports()}
      */
-    public function __construct(string $type, $value, int $options = Argument::COVARIANCE|Argument::CONTRAVARIANCE|Argument::VERY_STRICT)
+    public function __construct(string $type, $value, int $options = Argument::EXACT|Argument::COVARIANCE|Argument::CONTRAVARIANCE|Argument::VERY_STRICT)
     {
         $this->type = $type;
         $this->value = $value;

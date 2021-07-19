@@ -494,6 +494,9 @@ final class CallbackTest extends TestCase
         $this->assertFalse($callback1->argument(0)->supports('string'));
         $this->assertFalse($callback1->argument(0)->supports(Object3::class));
         $this->assertFalse($callback1->argument(0)->supports(Object2::class, Argument::CONTRAVARIANCE));
+        $this->assertFalse($callback1->argument(0)->supports(Object2::class, Argument::EXACT));
+        $this->assertTrue($callback1->argument(0)->supports(Object1::class, Argument::EXACT));
+        $this->assertTrue($callback1->argument(0)->supports('null', Argument::EXACT));
 
         $this->assertTrue($callback1->argument(1)->supports('string'));
         $this->assertTrue($callback1->argument(1)->supports('int'));

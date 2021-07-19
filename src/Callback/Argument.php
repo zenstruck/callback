@@ -8,6 +8,11 @@ namespace Zenstruck\Callback;
 final class Argument
 {
     /**
+     * Allow exact type (always enabled).
+     */
+    public const EXACT = 0;
+
+    /**
      * If type is class, parent classes are supported.
      */
     public const COVARIANCE = 2;
@@ -75,10 +80,10 @@ final class Argument
 
     /**
      * @param string $type    The type to check if this argument supports
-     * @param int    $options {@see COVARIANCE}, {@see CONTRAVARIANCE}
+     * @param int    $options {@see EXACT}, {@see COVARIANCE}, {@see CONTRAVARIANCE}
      *                        Bitwise disjunction of above is allowed
      */
-    public function supports(string $type, int $options = self::COVARIANCE): bool
+    public function supports(string $type, int $options = self::EXACT|self::COVARIANCE): bool
     {
         if (!$this->hasType()) {
             // no type-hint so any type is supported
@@ -142,7 +147,8 @@ final class Argument
 
         $type = \is_object($value) ? \get_class($value) : \gettype($value);
         $type = self::TYPE_NORMALIZE_MAP[$type] ?? $type;
-        $supports = $this->supports($type, $strict ? self::COVARIANCE|self::STRICT : self::COVARIANCE);
+        $options = $strict ? self::EXACT|self::COVARIANCE|self::STRICT : self::EXACT|self::COVARIANCE;
+        $supports = $this->supports($type, $options);
 
         if (!$supports) {
             return false;
