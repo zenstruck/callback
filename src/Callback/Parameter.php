@@ -63,7 +63,15 @@ abstract class Parameter
      */
     final public function resolve(Argument $argument)
     {
-        $value = $this->valueFor($argument);
+        try {
+            $value = $this->valueFor($argument);
+        } catch (UnresolveableArgument $e) {
+            if ($argument->isOptional()) {
+                return $argument->defaultValue();
+            }
+
+            throw $e;
+        }
 
         if ($value instanceof ValueFactory) {
             $value = $value($argument);

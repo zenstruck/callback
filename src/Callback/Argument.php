@@ -78,6 +78,19 @@ final class Argument
         return \count($this->types()) > 1;
     }
 
+    public function isOptional(): bool
+    {
+        return $this->parameter->isOptional();
+    }
+
+    /**
+     * @return mixed
+     */
+    public function defaultValue()
+    {
+        return $this->parameter->getDefaultValue();
+    }
+
     /**
      * @param string $type    The type to check if this argument supports
      * @param int    $options {@see EXACT}, {@see COVARIANCE}, {@see CONTRAVARIANCE}
