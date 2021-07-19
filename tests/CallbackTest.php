@@ -166,7 +166,7 @@ final class CallbackTest extends TestCase
         $callback = Callback::createFor(static function(Object1 $object1, Object2 $object2, Object3 $object3) {});
 
         $this->expectException(UnresolveableArgument::class);
-        $this->expectExceptionMessage('Unable to resolve argument 3 for callback. Expected type: "mixed|Zenstruck\Callback\Tests\Object1"');
+        $this->expectExceptionMessage('Unable to resolve argument 2 for callback. Expected type: "mixed|Zenstruck\Callback\Tests\Object1"');
 
         $callback->invokeAll(Parameter::union(
             Parameter::untyped(new Object1()),
@@ -462,21 +462,27 @@ final class CallbackTest extends TestCase
      */
     public function argument_supports(): void
     {
-        $callback1 = Callback::createFor(function(Object1 $object, string $string, $noType) {});
+        $callback1 = Callback::createFor(function(?Object1 $object, string $string, int $int, $noType) {});
         $callback2 = Callback::createFor(function(Object2 $object, string $string, $noType) {});
 
         $this->assertTrue($callback1->argument(0)->supports(Object1::class));
         $this->assertTrue($callback1->argument(0)->supports(Object2::class));
+        $this->assertTrue($callback1->argument(0)->supports('null'));
+        $this->assertTrue($callback1->argument(0)->supports('NULL'));
         $this->assertFalse($callback1->argument(0)->supports('string'));
         $this->assertFalse($callback1->argument(0)->supports(Object3::class));
         $this->assertFalse($callback1->argument(0)->supports(Object2::class, Argument::EXACT));
+
         $this->assertTrue($callback1->argument(1)->supports('string'));
         $this->assertFalse($callback1->argument(1)->supports('int'));
-        $this->assertTrue($callback1->argument(2)->supports(Object1::class));
-        $this->assertTrue($callback1->argument(2)->supports(Object2::class));
-        $this->assertTrue($callback1->argument(2)->supports('string'));
-        $this->assertTrue($callback1->argument(2)->supports('string'));
+
         $this->assertTrue($callback1->argument(2)->supports('int'));
+        $this->assertTrue($callback1->argument(2)->supports('integer'));
+
+        $this->assertTrue($callback1->argument(3)->supports(Object1::class));
+        $this->assertTrue($callback1->argument(3)->supports(Object2::class));
+        $this->assertTrue($callback1->argument(3)->supports('string'));
+        $this->assertTrue($callback1->argument(3)->supports('int'));
 
         $this->assertTrue($callback2->argument(0)->supports(Object1::class, Argument::EXACT|Argument::COVARIANCE|Argument::CONTRAVARIANCE));
         $this->assertFalse($callback2->argument(0)->supports(Object3::class, Argument::EXACT|Argument::COVARIANCE|Argument::CONTRAVARIANCE));
@@ -485,17 +491,30 @@ final class CallbackTest extends TestCase
     /**
      * @test
      */
-    public function argument_supports_value(): void
+    public function argument_allows(): void
     {
-        $this->markTestIncomplete();
-    }
+        $callback1 = Callback::createFor(function(Object1 $object, string $string, int $int, $noType) {});
+        $callback2 = Callback::createFor(function(Object2 $object, string $string, $noType) {});
 
-    /**
-     * @test
-     */
-    public function resolved_contravariant_value_must_be_supported_by_argument(): void
-    {
-        $this->markTestIncomplete();
+        $this->assertTrue($callback1->argument(0)->allows(new Object1()));
+        $this->assertTrue($callback1->argument(0)->allows(new Object2()));
+        $this->assertFalse($callback1->argument(0)->allows('string'));
+        $this->assertFalse($callback1->argument(0)->allows(new Object3()));
+
+        $this->assertTrue($callback1->argument(1)->allows('string'));
+        $this->assertFalse($callback1->argument(1)->allows(16));
+
+        $this->assertTrue($callback1->argument(2)->allows(16));
+        $this->assertFalse($callback1->argument(2)->allows('string'));
+        $this->assertFalse($callback1->argument(2)->allows(16.0));
+
+        $this->assertTrue($callback1->argument(3)->allows(new Object1()));
+        $this->assertTrue($callback1->argument(3)->allows(new Object2()));
+        $this->assertTrue($callback1->argument(3)->allows('string'));
+        $this->assertTrue($callback1->argument(3)->allows(16));
+
+        $this->assertFalse($callback2->argument(0)->allows(new Object1()));
+        $this->assertFalse($callback2->argument(0)->allows(new Object3()));
     }
 }
 
@@ -519,6 +538,14 @@ class Object4
 
     public static function staticMethod()
     {
+    }
+}
+
+class Object5
+{
+    public function __toString(): string
+    {
+        return 'value';
     }
 }
 

@@ -53,11 +53,15 @@ abstract class Parameter
     {
         $value = $this->valueFor($argument);
 
-        if (!$value instanceof ValueFactory) {
-            return $value;
+        if ($value instanceof ValueFactory) {
+            $value = $value($argument);
         }
 
-        return $value($argument);
+        if (!$argument->allows($value)) {
+            throw new UnresolveableArgument(\sprintf('Unable to resolve argument. Expected "%s", got "%s".', $argument->type(), get_debug_type($value)));
+        }
+
+        return $value;
     }
 
     /**
