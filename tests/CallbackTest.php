@@ -179,11 +179,33 @@ final class CallbackTest extends TestCase
      */
     public function invoke_with_no_args(): void
     {
-        $actual = Callback::createFor(function() { return 'ret'; })
-            ->invoke()
-        ;
+        $actual = Callback::createFor(function() { return 'ret'; })->invoke();
 
         $this->assertSame('ret', $actual);
+    }
+
+    /**
+     * @test
+     */
+    public function invoke_with_too_few_parameters(): void
+    {
+        $this->expectException(\ArgumentCountError::class);
+        $this->expectExceptionMessage('Too few arguments passed to "Zenstruck\Callback\Tests\CallbackTest');
+        $this->expectExceptionMessage('Expected 2, got 1.');
+
+        Callback::createFor(function(string $string, float $float, ?int $int = null) { return 'ret'; })->invoke('2');
+    }
+
+    /**
+     * @test
+     */
+    public function invoke_with_non_parameters(): void
+    {
+        $callback = Callback::createFor(
+            function(string $string, float $float, ?int $int = null) { return [$string, $float, $int]; }
+        );
+
+        $this->assertSame(['value', 3.4, null], $callback->invoke('value', 3.4));
     }
 
     /**

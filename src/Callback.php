@@ -81,7 +81,11 @@ final class Callback implements \Countable
             }
         }
 
-        return $this->function->invoke(...$arguments);
+        try {
+            return $this->function->invoke(...$arguments);
+        } catch (\ArgumentCountError $e) {
+            throw new \ArgumentCountError(\sprintf('Too few arguments passed to "%s". Expected %d, got %s.', $this, $this->function->getNumberOfRequiredParameters(), \count($arguments)), 0, $e);
+        }
     }
 
     /**
