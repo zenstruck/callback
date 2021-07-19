@@ -32,7 +32,7 @@ final class TypedParameter extends Parameter
             throw new UnresolveableArgument('Argument has no type.');
         }
 
-        if ($argument->supports($this->type, Argument::EXACT|Argument::COVARIANCE|Argument::CONTRAVARIANCE)) {
+        if ($argument->supports($this->type, Argument::COVARIANCE|Argument::CONTRAVARIANCE|Argument::VERY_STRICT)) {
             return $this->value;
         }
 

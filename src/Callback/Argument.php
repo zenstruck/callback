@@ -8,31 +8,42 @@ namespace Zenstruck\Callback;
 final class Argument
 {
     /**
-     * Allow type to match exactly {@see supports()}.
+     * If type is class, parent classes are supported.
      */
-    public const EXACT = 2;
+    public const COVARIANCE = 2;
 
     /**
-     * If type is class, parent classes are supported {@see supports()}.
+     * If type is class, child classes are supported.
      */
-    public const COVARIANCE = 4;
+    public const CONTRAVARIANCE = 4;
 
     /**
-     * If type is class, child classes are supported {@see supports()}.
+     * If type is string, do not support other scalar types. Follows
+     * same logic as "declare(strict_types=1)".
      */
-    public const CONTRAVARIANCE = 8;
+    public const STRICT = 8;
+
+    /**
+     * If type is float, do not support int (implies {@see STRICT).
+     */
+    public const VERY_STRICT = 16;
 
     private const TYPE_NORMALIZE_MAP = [
         'boolean' => 'bool',
         'integer' => 'int',
+        'double' => 'float',
         'resource (closed)' => 'resource',
+    ];
+
+    private const ALLOWED_TYPE_MAP = [
+        'string' => ['bool', 'int', 'float'],
+        'bool' => ['string', 'int', 'float'],
+        'float' => ['string', 'int', 'bool'],
+        'int' => ['string', 'float', 'bool'],
     ];
 
     /** @var \ReflectionParameter */
     private $parameter;
-
-    /** @var \ReflectionNamedType[] */
-    private $types = [];
 
     public function __construct(\ReflectionParameter $parameter)
     {
@@ -64,10 +75,10 @@ final class Argument
 
     /**
      * @param string $type    The type to check if this argument supports
-     * @param int    $options {@see EXACT}, {@see COVARIANCE}, {@see CONTRAVARIANCE}
+     * @param int    $options {@see COVARIANCE}, {@see CONTRAVARIANCE}
      *                        Bitwise disjunction of above is allowed
      */
-    public function supports(string $type, int $options = self::EXACT|self::COVARIANCE): bool
+    public function supports(string $type, int $options = self::COVARIANCE): bool
     {
         if (!$this->hasType()) {
             // no type-hint so any type is supported
@@ -81,7 +92,7 @@ final class Argument
         $type = self::TYPE_NORMALIZE_MAP[$type] ?? $type;
 
         foreach ($this->types() as $supportedType) {
-            if ($options & self::EXACT && $supportedType === $type) {
+            if ($supportedType === $type) {
                 return true;
             }
 
@@ -92,6 +103,27 @@ final class Argument
             if ($options & self::CONTRAVARIANCE && \is_a($supportedType, $type, true)) {
                 return true;
             }
+
+            if ($options & self::VERY_STRICT) {
+                continue;
+            }
+
+            if ('float' === $supportedType && 'int' === $type) {
+                // strict typing allows int to pass a float validation
+                return true;
+            }
+
+            if ($options & self::STRICT) {
+                continue;
+            }
+
+            if (\in_array($type, self::ALLOWED_TYPE_MAP[$supportedType] ?? [], true)) {
+                return true;
+            }
+
+            if (\method_exists($type, '__toString')) {
+                return true;
+            }
         }
 
         return false;
@@ -99,10 +131,29 @@ final class Argument
 
     /**
      * @param mixed $value
+     * @param bool  $strict {@see STRICT}
      */
-    public function allows($value): bool
+    public function allows($value, bool $strict = false): bool
     {
-        return $this->supports(\is_object($value) ? \get_class($value) : \gettype($value));
+        if (!$this->hasType()) {
+            // no type-hint so any type is supported
+            return true;
+        }
+
+        $type = \is_object($value) ? \get_class($value) : \gettype($value);
+        $type = self::TYPE_NORMALIZE_MAP[$type] ?? $type;
+        $supports = $this->supports($type, $strict ? self::COVARIANCE|self::STRICT : self::COVARIANCE);
+
+        if (!$supports) {
+            return false;
+        }
+
+        if ('string' === $type && !\is_numeric($value) && !\in_array('string', $this->types(), true)) {
+            // non-numeric strings cannot be used for float/int
+            return false;
+        }
+
+        return true;
     }
 
     /**
