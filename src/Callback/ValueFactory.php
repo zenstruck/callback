@@ -12,6 +12,9 @@ final class ValueFactory
     /** @var callable */
     private $factory;
 
+    /**
+     * @param callable<string|array|Argument|null> $factory
+     */
     public function __construct(callable $factory)
     {
         $this->factory = $factory;
