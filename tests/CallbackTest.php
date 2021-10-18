@@ -581,6 +581,49 @@ final class CallbackTest extends TestCase
         $this->assertFalse($callback2->argument(0)->allows(new Object1()));
         $this->assertFalse($callback2->argument(0)->allows(new Object3()));
     }
+
+    /**
+     * @test
+     */
+    public function invoke_all_union_parameter_with_defaults(): void
+    {
+        $callback = Callback::createFor(function(string $a, ?\DateTimeInterface $b = null, $c = null) { return [$a, $b, $c]; });
+
+        $ret = $callback->invokeAll(Parameter::union(
+            Parameter::typed('string', 'a')
+        ));
+
+        $this->assertSame(['a', null, null], $ret);
+
+        $ret = $callback->invokeAll(Parameter::union(
+            Parameter::typed('string', 'a'),
+            Parameter::typed(\DateTime::class, $b = new \DateTime())
+        ));
+
+        $this->assertSame(['a', $b, null], $ret);
+
+        $ret = $callback->invokeAll(Parameter::union(
+            Parameter::typed('string', 'a'),
+            Parameter::untyped('c')
+        ));
+
+        $this->assertSame(['a', null, 'c'], $ret);
+
+        $ret = $callback->invokeAll(Parameter::union(
+            Parameter::untyped('c'),
+            Parameter::typed('string', 'a'),
+            Parameter::typed(\DateTime::class, $b = new \DateTime())
+        ));
+
+        $this->assertSame(['a', $b, 'c'], $ret);
+
+        $ret = $callback->invokeAll(Parameter::union(
+            Parameter::typed('string', 'a'),
+            Parameter::typed(\DateTime::class, Parameter::factory(function() use ($b) { return $b; }))
+        ));
+
+        $this->assertSame(['a', $b, null], $ret);
+    }
 }
 
 class Object1

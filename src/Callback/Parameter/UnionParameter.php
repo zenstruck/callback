@@ -32,7 +32,7 @@ final class UnionParameter extends Parameter
     {
         foreach ($this->parameters as $parameter) {
             try {
-                return $parameter->resolve($argument);
+                return $parameter->valueFor($argument);
             } catch (UnresolveableArgument $e) {
                 continue;
             }
