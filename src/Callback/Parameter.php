@@ -26,9 +26,9 @@ abstract class Parameter
     /**
      * @see TypedParameter::__construct()
      */
-    final public static function typed(string $type, $value): self
+    final public static function typed(string $type, $value, int $options = Argument::EXACT|Argument::COVARIANCE|Argument::CONTRAVARIANCE|Argument::VERY_STRICT): self
     {
-        return new TypedParameter($type, $value);
+        return new TypedParameter($type, $value, $options);
     }
 
     /**
