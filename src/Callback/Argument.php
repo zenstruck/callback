@@ -139,7 +139,7 @@ final class Argument
                 return true;
             }
 
-            if (\method_exists($type, '__toString')) {
+            if ('string' === $supportedType && \method_exists($type, '__toString')) {
                 return true;
             }
         }

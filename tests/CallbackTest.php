@@ -624,6 +624,20 @@ final class CallbackTest extends TestCase
 
         $this->assertSame(['a', $b, null], $ret);
     }
+
+    /**
+     * @test
+     */
+    public function to_string_object(): void
+    {
+        $callback = Callback::createFor(function(Object1 $o, string $s) {});
+
+        $this->assertFalse($callback->argument(0)->supports(Object5::class));
+        $this->assertTrue($callback->argument(1)->supports(Object5::class));
+
+        $this->assertFalse($callback->argument(0)->allows(new Object5()));
+        $this->assertTrue($callback->argument(1)->allows(new Object5()));
+    }
 }
 
 class Object1
