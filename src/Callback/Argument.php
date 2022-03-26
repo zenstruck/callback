@@ -65,7 +65,20 @@ final class Argument
      */
     public function types(): array
     {
-        return \array_map(static function(\ReflectionNamedType $type) { return $type->getName(); }, $this->reflectionTypes());
+        return \array_map(
+            function(\ReflectionNamedType $type) {
+                if ('self' !== $name = $type->getName()) {
+                    return $name;
+                }
+
+                if (!$class = $this->parameter->getDeclaringClass()) {
+                    throw new \LogicException('Unable to parse context of "self" typehint.');
+                }
+
+                return $class->name;
+            },
+            $this->reflectionTypes()
+        );
     }
 
     public function hasType(): bool
@@ -139,7 +152,7 @@ final class Argument
                 return true;
             }
 
-            if (\method_exists($type, '__toString')) {
+            if ('string' === $supportedType && \method_exists($type, '__toString')) {
                 return true;
             }
         }

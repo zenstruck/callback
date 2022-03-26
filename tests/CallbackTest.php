@@ -585,6 +585,26 @@ final class CallbackTest extends TestCase
     /**
      * @test
      */
+    public function self_parameter_type(): void
+    {
+        $callback = Callback::createFor(Object6::closureSelf());
+
+        $this->assertSame(Object6::class, $callback->argument(0)->type());
+
+        $this->assertTrue($callback->argument(0)->supports(Object6::class));
+        $this->assertTrue($callback->argument(0)->supports(Object7::class));
+        $this->assertFalse($callback->argument(0)->supports(Object5::class));
+        $this->assertFalse($callback->argument(0)->supports('int'));
+
+        $this->assertTrue($callback->argument(0)->allows(new Object6()));
+        $this->assertTrue($callback->argument(0)->allows(new Object7()));
+        $this->assertFalse($callback->argument(0)->allows(new Object5()));
+        $this->assertFalse($callback->argument(0)->allows(6));
+    }
+
+    /**
+     * @test
+     */
     public function invoke_all_union_parameter_with_defaults(): void
     {
         $callback = Callback::createFor(function(string $a, ?\DateTimeInterface $b = null, $c = null) { return [$a, $b, $c]; });
@@ -624,6 +644,20 @@ final class CallbackTest extends TestCase
 
         $this->assertSame(['a', $b, null], $ret);
     }
+
+    /**
+     * @test
+     */
+    public function to_string_object(): void
+    {
+        $callback = Callback::createFor(function(Object1 $o, string $s) {});
+
+        $this->assertFalse($callback->argument(0)->supports(Object5::class));
+        $this->assertTrue($callback->argument(1)->supports(Object5::class));
+
+        $this->assertFalse($callback->argument(0)->allows(new Object5()));
+        $this->assertTrue($callback->argument(1)->allows(new Object5()));
+    }
 }
 
 class Object1
@@ -658,5 +692,19 @@ class Object5
 }
 
 function test_function()
+{
+}
+
+class Object6
+{
+    public static function closureSelf(): \Closure
+    {
+        return function(self $object) {
+            return $object;
+        };
+    }
+}
+
+class Object7 extends Object6
 {
 }
