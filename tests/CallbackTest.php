@@ -308,11 +308,12 @@ final class CallbackTest extends TestCase
      */
     public function is_stringable(): void
     {
-        $this->assertStringMatchesFormat(__CLASS__.':%d', (string) Callback::createFor(function() {}));
-        $this->assertStringMatchesFormat(__CLASS__.':%d', (string) Callback::createFor([$this, __METHOD__]));
-        $this->assertStringMatchesFormat(Object4::class.':%d', (string) Callback::createFor(new Object4()));
-        $this->assertStringMatchesFormat(Object4::class.':%d', (string) Callback::createFor([Object4::class, 'staticMethod']));
-        $this->assertSame(__NAMESPACE__.'\test_function', (string) Callback::createFor(__NAMESPACE__.'\test_function'));
+        $this->assertSame('(function) strlen()', (string) Callback::createFor('strlen'));
+        $this->assertStringMatchesFormat('(closure) '.__FILE__.':%d', (string) Callback::createFor(function() {}));
+        $this->assertStringMatchesFormat('(closure) '.__FILE__.':%d', (string) Callback::createFor([$this, __METHOD__]));
+        $this->assertStringMatchesFormat('(closure) '.__FILE__.':%d', (string) Callback::createFor(new Object4()));
+        $this->assertStringMatchesFormat('(closure) '.__FILE__.':%d', (string) Callback::createFor([Object4::class, 'staticMethod']));
+        $this->assertSame('(function) '.__NAMESPACE__.'\test_function()', (string) Callback::createFor(__NAMESPACE__.'\test_function'));
     }
 
     /**
