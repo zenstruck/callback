@@ -50,14 +50,28 @@ final class Argument
     /** @var \ReflectionParameter */
     private $parameter;
 
+    /** @var ?\ReflectionType */
+    private $reflectionType;
+
+    /** @var string[] */
+    private $types;
+
+    /** @var ?string */
+    private $type;
+
     public function __construct(\ReflectionParameter $parameter)
     {
         $this->parameter = $parameter;
+        $this->reflectionType = $parameter->getType();
     }
 
     public function type(): ?string
     {
-        return $this->hasType() ? \implode('|', $this->types()) : null;
+        if (isset($this->type)) {
+            return $this->type;
+        }
+
+        return $this->type = $this->hasType() ? \implode('|', $this->types()) : null;
     }
 
     /**
@@ -65,7 +79,11 @@ final class Argument
      */
     public function types(): array
     {
-        return \array_map(
+        if (isset($this->types)) {
+            return $this->types;
+        }
+
+        return $this->types = \array_map(
             function(\ReflectionNamedType $type) {
                 if ('self' !== $name = $type->getName()) {
                     return $name;
@@ -193,15 +211,15 @@ final class Argument
      */
     private function reflectionTypes(): array
     {
-        if (!$type = $this->parameter->getType()) {
+        if (!$this->reflectionType) {
             return [];
         }
 
-        if ($type instanceof \ReflectionNamedType) {
-            return [$type];
+        if ($this->reflectionType instanceof \ReflectionNamedType) {
+            return [$this->reflectionType];
         }
 
         /** @var \ReflectionUnionType $type */
-        return $type->getTypes();
+        return $this->reflectionType->getTypes();
     }
 }

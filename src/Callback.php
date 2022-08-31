@@ -14,6 +14,9 @@ final class Callback implements \Countable
     /** @var \ReflectionFunction */
     private $function;
 
+    /** @var Argument[] */
+    private $arguments;
+
     private function __construct(\ReflectionFunction $function)
     {
         $this->function = $function;
@@ -34,7 +37,7 @@ final class Callback implements \Countable
     public static function createFor($value): self
     {
         if (\is_callable($value)) {
-            $value = new \ReflectionFunction(\Closure::fromCallable($value));
+            $value = new \ReflectionFunction($value instanceof \Closure ? $value : \Closure::fromCallable($value));
         }
 
         if (!$value instanceof \ReflectionFunction) {
@@ -123,7 +126,11 @@ final class Callback implements \Countable
      */
     public function arguments(): array
     {
-        return \array_map(
+        if (isset($this->arguments)) {
+            return $this->arguments;
+        }
+
+        return $this->arguments = \array_map(
             static function(\ReflectionParameter $parameter) {
                 return new Argument($parameter);
             },
