@@ -149,6 +149,11 @@ final class Callback implements \Countable
         return $arguments[$index];
     }
 
+    public function function(): \ReflectionFunction
+    {
+        return $this->function;
+    }
+
     public function count(): int
     {
         return $this->function->getNumberOfParameters();
