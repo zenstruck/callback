@@ -65,13 +65,18 @@ final class Argument
         $this->reflectionType = $parameter->getType();
     }
 
+    public function __toString(): string
+    {
+        return (string) $this->type();
+    }
+
     public function type(): ?string
     {
         if (isset($this->type)) {
             return $this->type;
         }
 
-        return $this->type = $this->hasType() ? \implode('|', $this->types()) : null;
+        return $this->type = $this->hasType() ? \implode($this->isIntersectionType() ? '&' : '|', $this->types()) : null;
     }
 
     /**
@@ -101,12 +106,22 @@ final class Argument
 
     public function hasType(): bool
     {
-        return !empty($this->types());
+        return (bool) $this->reflectionType;
+    }
+
+    public function isNamedType(): bool
+    {
+        return $this->reflectionType instanceof \ReflectionNamedType;
     }
 
     public function isUnionType(): bool
     {
-        return \count($this->types()) > 1;
+        return $this->reflectionType instanceof \ReflectionUnionType;
+    }
+
+    public function isIntersectionType(): bool
+    {
+        return $this->reflectionType instanceof \ReflectionIntersectionType;
     }
 
     public function isOptional(): bool
@@ -129,8 +144,21 @@ final class Argument
      */
     public function supports(string $type, int $options = self::EXACT|self::COVARIANCE): bool
     {
-        if (!$this->hasType()) {
+        if (!$this->reflectionType) {
             // no type-hint so any type is supported
+            return true;
+        }
+
+        if ($this->reflectionType instanceof \ReflectionIntersectionType) {
+            foreach ($this->reflectionType->getTypes() as $refType) {
+                $arg = clone $this;
+                $arg->reflectionType = $refType;
+
+                if (!$arg->supports($type)) {
+                    return false;
+                }
+            }
+
             return true;
         }
 
