@@ -14,6 +14,9 @@ final class Callback implements \Countable
     /** @var \ReflectionFunction */
     private $function;
 
+    /** @var Argument[] */
+    private $arguments;
+
     private function __construct(\ReflectionFunction $function)
     {
         $this->function = $function;
@@ -21,11 +24,11 @@ final class Callback implements \Countable
 
     public function __toString(): string
     {
-        if ($class = $this->function->getClosureScopeClass()) {
-            return "{$class->getName()}:{$this->function->getStartLine()}";
+        if ($this->function->isClosure()) {
+            return "(closure) {$this->function->getFileName()}:{$this->function->getStartLine()}";
         }
 
-        return $this->function->getName();
+        return "(function) {$this->function->name}()";
     }
 
     /**
@@ -34,7 +37,9 @@ final class Callback implements \Countable
     public static function createFor($value): self
     {
         if (\is_callable($value)) {
-            $value = new \ReflectionFunction(\Closure::fromCallable($value));
+            $value = new \ReflectionFunction(
+                $value instanceof \Closure || \is_string($value) ? $value : \Closure::fromCallable($value)
+            );
         }
 
         if (!$value instanceof \ReflectionFunction) {
@@ -123,7 +128,11 @@ final class Callback implements \Countable
      */
     public function arguments(): array
     {
-        return \array_map(
+        if (isset($this->arguments)) {
+            return $this->arguments;
+        }
+
+        return $this->arguments = \array_map(
             static function(\ReflectionParameter $parameter) {
                 return new Argument($parameter);
             },
@@ -138,6 +147,11 @@ final class Callback implements \Countable
         }
 
         return $arguments[$index];
+    }
+
+    public function function(): \ReflectionFunction
+    {
+        return $this->function;
     }
 
     public function count(): int
