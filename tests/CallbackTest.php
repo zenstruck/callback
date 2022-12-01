@@ -310,7 +310,7 @@ final class CallbackTest extends TestCase
     {
         $this->assertSame('(function) strlen()', (string) Callback::createFor('strlen'));
         $this->assertStringMatchesFormat('(closure) '.__FILE__.':%d', (string) Callback::createFor(function() {}));
-        $this->assertStringMatchesFormat('(closure) '.__FILE__.':%d', (string) Callback::createFor([$this, __METHOD__]));
+        $this->assertStringMatchesFormat('(closure) '.__FILE__.':%d', (string) Callback::createFor([$this, 'is_stringable']));
         $this->assertStringMatchesFormat('(closure) '.__FILE__.':%d', (string) Callback::createFor(new Object4()));
         $this->assertStringMatchesFormat('(closure) '.__FILE__.':%d', (string) Callback::createFor([Object4::class, 'staticMethod']));
         $this->assertSame('(function) '.__NAMESPACE__.'\test_function()', (string) Callback::createFor(__NAMESPACE__.'\test_function'));
