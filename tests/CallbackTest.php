@@ -318,12 +318,10 @@ final class CallbackTest extends TestCase
 
     /**
      * @test
-     * @requires PHP >= 8.0
      */
     public function invoke_can_support_union_typehints(): void
     {
-        // hack to allow test suite to run on php 7 w/o syntax errors
-        eval('$callback = fn(\Zenstruck\Callback\Tests\Object1|string $arg) => \'ret\';');
+        $callback = fn(Object1|string $arg) => 'ret';
 
         $this->assertSame('ret', Callback::createFor($callback)->invokeAll(Parameter::typed(Object1::class, new Object1())));
         $this->assertSame('ret', Callback::createFor($callback)->invokeAll(Parameter::typed('string', 'value')));
@@ -353,12 +351,10 @@ final class CallbackTest extends TestCase
 
     /**
      * @test
-     * @requires PHP >= 8.0
      */
     public function can_get_union_callback_arguments(): void
     {
-        // hack to allow test suite to run on php 7 w/o syntax errors
-        eval('$callback = fn(\Zenstruck\Callback\Tests\Object1|string $a, $b, string $c) => null;');
+        $callback = fn(Object1|string $a, $b, string $c) => null;
         $callback = Callback::createFor($callback);
 
         $this->assertSame(Object1::class.'|string', $callback->argument(0)->type());
@@ -427,12 +423,10 @@ final class CallbackTest extends TestCase
 
     /**
      * @test
-     * @requires PHP >= 8.0
      */
     public function value_factory_can_be_used_with_union_arguments_if_no_value_factory_argument(): void
     {
-        // hack to allow test suite to run on php 7 w/o syntax errors
-        eval('$callback = fn(\Zenstruck\Callback\Tests\Object1|string $a) => $a;');
+        $callback = fn(Object1|string $a) => $a;
 
         $ret = Callback::createFor($callback)
             ->invoke(Parameter::typed('string', Parameter::factory(function() { return 'value'; })))
@@ -443,7 +437,6 @@ final class CallbackTest extends TestCase
 
     /**
      * @test
-     * @requires PHP >= 8.0
      */
     public function value_factory_can_be_used_with_union_arguments_as_array(): void
     {
@@ -454,8 +447,7 @@ final class CallbackTest extends TestCase
             return 'value';
         });
 
-        // hack to allow test suite to run on php 7 w/o syntax errors
-        eval('$callback = fn(\Zenstruck\Callback\Tests\Object1|string $a) => $a;');
+        $callback = fn(Object1|string $a) => $a;
         $ret = Callback::createFor($callback)
             ->invoke(Parameter::typed('string', $factory))
         ;
@@ -466,14 +458,12 @@ final class CallbackTest extends TestCase
 
     /**
      * @test
-     * @requires PHP >= 8.0
      */
     public function value_factory_cannot_accept_union_argument(): void
     {
         $this->expectException(\LogicException::class);
 
-        // hack to allow test suite to run on php 7 w/o syntax errors
-        eval('$callback = fn(\Zenstruck\Callback\Tests\Object1|string $a) => $a;');
+        $callback = fn(Object1|string $a) => $a;
 
         Callback::createFor($callback)
             ->invoke(Parameter::typed('string', Parameter::factory(function(string $type) { return $type; })))
