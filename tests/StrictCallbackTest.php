@@ -2,6 +2,15 @@
 
 declare(strict_types=1);
 
+/*
+ * This file is part of the zenstruck/callback package.
+ *
+ * (c) Kevin Bond <kevinbond@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace Zenstruck\Callback\Tests;
 
 use PHPUnit\Framework\TestCase;
@@ -19,7 +28,7 @@ final class StrictCallbackTest extends TestCase
     public function invoke_with_non_parameters(): void
     {
         $callback = Callback::createFor(
-            function(string $string, float $float, ?int $int = null) { return [$string, $float, $int]; }
+            fn(string $string, float $float, ?int $int = null) => [$string, $float, $int]
         );
 
         $this->assertSame(['6.2', 3.0, null], $callback->invoke(6.2, '3'));
@@ -31,7 +40,7 @@ final class StrictCallbackTest extends TestCase
     public function invoke_with_parameter(): void
     {
         $ret = Callback::createFor(
-            function(string $string, float $float, ?int $int = null) { return [$string, $float, $int]; }
+            fn(string $string, float $float, ?int $int = null) => [$string, $float, $int]
         )->invoke(
             Parameter::typed('string', 6.2),
             Parameter::union(
@@ -49,7 +58,7 @@ final class StrictCallbackTest extends TestCase
     public function invoke_all(): void
     {
         $ret = Callback::createFor(
-            function(string $string, float $float, int $int = 16) { return [$string, $float, $int]; }
+            fn(string $string, float $float, int $int = 16) => [$string, $float, $int]
         )->invokeAll(
             Parameter::union(
                 Parameter::typed('float', 3),

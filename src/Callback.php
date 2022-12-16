@@ -1,5 +1,14 @@
 <?php
 
+/*
+ * This file is part of the zenstruck/callback package.
+ *
+ * (c) Kevin Bond <kevinbond@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace Zenstruck;
 
 use Zenstruck\Callback\Argument;
@@ -133,9 +142,7 @@ final class Callback implements \Countable
         }
 
         return $this->arguments = \array_map(
-            static function(\ReflectionParameter $parameter) {
-                return new Argument($parameter);
-            },
+            static fn(\ReflectionParameter $parameter) => new Argument($parameter),
             $this->function->getParameters()
         );
     }

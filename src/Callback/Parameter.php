@@ -1,5 +1,14 @@
 <?php
 
+/*
+ * This file is part of the zenstruck/callback package.
+ *
+ * (c) Kevin Bond <kevinbond@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace Zenstruck\Callback;
 
 use Zenstruck\Callback\Exception\UnresolveableArgument;
@@ -26,7 +35,7 @@ abstract class Parameter
     /**
      * @see TypedParameter::__construct()
      */
-    final public static function typed(string $type, $value, int $options = Argument::EXACT|Argument::COVARIANCE|Argument::CONTRAVARIANCE|Argument::VERY_STRICT): self
+    final public static function typed(string $type, $value, int $options = Argument::EXACT | Argument::COVARIANCE | Argument::CONTRAVARIANCE | Argument::VERY_STRICT): self
     {
         return new TypedParameter($type, $value, $options);
     }
@@ -78,7 +87,7 @@ abstract class Parameter
         }
 
         if (!$argument->allows($value)) {
-            throw new UnresolveableArgument(\sprintf('Unable to resolve argument. Expected "%s", got "%s".', $argument->type(), get_debug_type($value)));
+            throw new UnresolveableArgument(\sprintf('Unable to resolve argument. Expected "%s", got "%s".', $argument->type(), \get_debug_type($value)));
         }
 
         return $value;

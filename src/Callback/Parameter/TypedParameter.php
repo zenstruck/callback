@@ -1,5 +1,14 @@
 <?php
 
+/*
+ * This file is part of the zenstruck/callback package.
+ *
+ * (c) Kevin Bond <kevinbond@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace Zenstruck\Callback\Parameter;
 
 use Zenstruck\Callback\Argument;
@@ -26,7 +35,7 @@ final class TypedParameter extends Parameter
      * @param mixed|ValueFactory $value
      * @param int                $options {@see Argument::supports()}
      */
-    public function __construct(string $type, $value, int $options = Argument::EXACT|Argument::COVARIANCE|Argument::CONTRAVARIANCE|Argument::VERY_STRICT)
+    public function __construct(string $type, $value, int $options = Argument::EXACT | Argument::COVARIANCE | Argument::CONTRAVARIANCE | Argument::VERY_STRICT)
     {
         $this->type = $type;
         $this->value = $value;

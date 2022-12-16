@@ -1,5 +1,14 @@
 <?php
 
+/*
+ * This file is part of the zenstruck/callback package.
+ *
+ * (c) Kevin Bond <kevinbond@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace Zenstruck\Callback\Tests;
 
 use PHPUnit\Framework\TestCase;
@@ -28,7 +37,7 @@ final class CallbackTest extends TestCase
      */
     public function invoke_all_can_enforce_min_arguments(): void
     {
-        $callback = Callback::createFor(function() { return 'ret'; });
+        $callback = Callback::createFor(fn() => 'ret');
 
         $this->expectException(\ArgumentCountError::class);
 
@@ -40,7 +49,7 @@ final class CallbackTest extends TestCase
      */
     public function invoke_all_with_no_arguments(): void
     {
-        $actual = Callback::createFor(function() { return 'ret'; })
+        $actual = Callback::createFor(fn() => 'ret')
             ->invokeAll(Parameter::untyped('foo'))
         ;
 
@@ -57,7 +66,7 @@ final class CallbackTest extends TestCase
                 Parameter::untyped('foobar'),
                 Parameter::typed('string', 'foobar')
             )
-        )
+            )
         ;
 
         $this->assertSame('FOOBAR', $actual);
@@ -68,7 +77,7 @@ final class CallbackTest extends TestCase
      */
     public function invoke_all_untyped_argument(): void
     {
-        $actual = Callback::createFor(function($string) { return \mb_strtoupper($string); })
+        $actual = Callback::createFor(fn($string) => \mb_strtoupper($string))
             ->invokeAll(Parameter::untyped('foobar'))
         ;
 
@@ -80,7 +89,7 @@ final class CallbackTest extends TestCase
      */
     public function invoke_all_primitive_typed_argument(): void
     {
-        $actual = Callback::createFor(function(string $string) { return \mb_strtoupper($string); })
+        $actual = Callback::createFor(fn(string $string) => \mb_strtoupper($string))
             ->invokeAll(Parameter::typed('string', 'foobar'))
         ;
 
@@ -179,7 +188,7 @@ final class CallbackTest extends TestCase
      */
     public function invoke_with_no_args(): void
     {
-        $actual = Callback::createFor(function() { return 'ret'; })->invoke();
+        $actual = Callback::createFor(fn() => 'ret')->invoke();
 
         $this->assertSame('ret', $actual);
     }
@@ -193,7 +202,7 @@ final class CallbackTest extends TestCase
         $this->expectExceptionMessage('Too few arguments passed to "Zenstruck\Callback\Tests\CallbackTest');
         $this->expectExceptionMessage('Expected 2, got 1.');
 
-        Callback::createFor(function(string $string, float $float, ?int $int = null) { return 'ret'; })->invoke('2');
+        Callback::createFor(fn(string $string, float $float, ?int $int = null) => 'ret')->invoke('2');
     }
 
     /**
@@ -202,7 +211,7 @@ final class CallbackTest extends TestCase
     public function invoke_with_non_parameters(): void
     {
         $callback = Callback::createFor(
-            function(string $string, float $float, ?int $int = null) { return [$string, $float, $int]; }
+            fn(string $string, float $float, ?int $int = null) => [$string, $float, $int]
         );
 
         $this->assertSame(['value', 3.4, null], $callback->invoke('value', 3.4));
@@ -290,13 +299,13 @@ final class CallbackTest extends TestCase
      */
     public function can_mark_invoke_parameter_arguments_as_optional(): void
     {
-        $actual = Callback::createFor(static function() { return 'ret'; })
+        $actual = Callback::createFor(static fn() => 'ret')
             ->invoke(Parameter::typed('string', 'foobar')->optional())
         ;
 
         $this->assertSame('ret', $actual);
 
-        $actual = Callback::createFor(static function(string $v) { return $v; })
+        $actual = Callback::createFor(static fn(string $v) => $v)
             ->invoke(Parameter::typed('string', 'foobar')->optional())
         ;
 
@@ -345,7 +354,7 @@ final class CallbackTest extends TestCase
                 null,
                 'string',
             ],
-            \array_map(function(Argument $a) { return $a->type(); }, $callback->arguments())
+            \array_map(fn(Argument $a) => $a->type(), $callback->arguments())
         );
     }
 
@@ -366,7 +375,7 @@ final class CallbackTest extends TestCase
                 null,
                 'string',
             ],
-            \array_map(function(Argument $a) { return $a->type(); }, $callback->arguments())
+            \array_map(fn(Argument $a) => $a->type(), $callback->arguments())
         );
     }
 
@@ -385,7 +394,7 @@ final class CallbackTest extends TestCase
      */
     public function value_factory_injects_argument_if_type_hinted(): void
     {
-        $callback = Callback::createFor(function(string $a, int $b, $c) { return [$a, $b, $c]; });
+        $callback = Callback::createFor(fn(string $a, int $b, $c) => [$a, $b, $c]);
         $factory = Parameter::factory(function(Argument $argument) {
             if ($argument->supports('string', Argument::STRICT)) {
                 return 'string';
@@ -414,8 +423,8 @@ final class CallbackTest extends TestCase
      */
     public function can_use_value_factory_with_no_argument(): void
     {
-        $ret = Callback::createFor(function($value) { return $value; })
-            ->invoke(Parameter::untyped(Parameter::factory(function() { return 'value'; })))
+        $ret = Callback::createFor(fn($value) => $value)
+            ->invoke(Parameter::untyped(Parameter::factory(fn() => 'value')))
         ;
 
         $this->assertSame('value', $ret);
@@ -429,7 +438,7 @@ final class CallbackTest extends TestCase
         $callback = fn(Object1|string $a) => $a;
 
         $ret = Callback::createFor($callback)
-            ->invoke(Parameter::typed('string', Parameter::factory(function() { return 'value'; })))
+            ->invoke(Parameter::typed('string', Parameter::factory(fn() => 'value')))
         ;
 
         $this->assertSame('value', $ret);
@@ -466,7 +475,7 @@ final class CallbackTest extends TestCase
         $callback = fn(Object1|string $a) => $a;
 
         Callback::createFor($callback)
-            ->invoke(Parameter::typed('string', Parameter::factory(function(string $type) { return $type; })))
+            ->invoke(Parameter::typed('string', Parameter::factory(fn(string $type) => $type)))
         ;
     }
 
@@ -530,8 +539,8 @@ final class CallbackTest extends TestCase
         $this->assertTrue($callback1->argument(5)->supports('string'));
         $this->assertFalse($callback1->argument(5)->supports('string', Argument::STRICT));
 
-        $this->assertTrue($callback2->argument(0)->supports(Object1::class, Argument::COVARIANCE|Argument::CONTRAVARIANCE));
-        $this->assertFalse($callback2->argument(0)->supports(Object3::class, Argument::COVARIANCE|Argument::CONTRAVARIANCE));
+        $this->assertTrue($callback2->argument(0)->supports(Object1::class, Argument::COVARIANCE | Argument::CONTRAVARIANCE));
+        $this->assertFalse($callback2->argument(0)->supports(Object3::class, Argument::COVARIANCE | Argument::CONTRAVARIANCE));
     }
 
     /**
@@ -598,7 +607,7 @@ final class CallbackTest extends TestCase
      */
     public function invoke_all_union_parameter_with_defaults(): void
     {
-        $callback = Callback::createFor(function(string $a, ?\DateTimeInterface $b = null, $c = null) { return [$a, $b, $c]; });
+        $callback = Callback::createFor(fn(string $a, ?\DateTimeInterface $b = null, $c = null) => [$a, $b, $c]);
 
         $ret = $callback->invokeAll(Parameter::union(
             Parameter::typed('string', 'a')
@@ -630,7 +639,7 @@ final class CallbackTest extends TestCase
 
         $ret = $callback->invokeAll(Parameter::union(
             Parameter::typed('string', 'a'),
-            Parameter::typed(\DateTime::class, Parameter::factory(function() use ($b) { return $b; }))
+            Parameter::typed(\DateTime::class, Parameter::factory(fn() => $b))
         ));
 
         $this->assertSame(['a', $b, null], $ret);
@@ -690,9 +699,7 @@ class Object6
 {
     public static function closureSelf(): \Closure
     {
-        return function(self $object) {
-            return $object;
-        };
+        return fn(self $object) => $object;
     }
 }
 

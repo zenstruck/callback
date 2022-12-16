@@ -1,5 +1,14 @@
 <?php
 
+/*
+ * This file is part of the zenstruck/callback package.
+ *
+ * (c) Kevin Bond <kevinbond@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace Zenstruck\Callback;
 
 /**
@@ -142,7 +151,7 @@ final class Argument
      * @param int    $options {@see EXACT}, {@see COVARIANCE}, {@see CONTRAVARIANCE}
      *                        Bitwise disjunction of above is allowed
      */
-    public function supports(string $type, int $options = self::EXACT|self::COVARIANCE): bool
+    public function supports(string $type, int $options = self::EXACT | self::COVARIANCE): bool
     {
         if (!$this->reflectionType) {
             // no type-hint so any type is supported
@@ -217,9 +226,9 @@ final class Argument
             return true;
         }
 
-        $type = \is_object($value) ? \get_class($value) : \gettype($value);
+        $type = \is_object($value) ? $value::class : \gettype($value);
         $type = self::TYPE_NORMALIZE_MAP[$type] ?? $type;
-        $options = $strict ? self::EXACT|self::COVARIANCE|self::STRICT : self::EXACT|self::COVARIANCE;
+        $options = $strict ? self::EXACT | self::COVARIANCE | self::STRICT : self::EXACT | self::COVARIANCE;
         $supports = $this->supports($type, $options);
 
         if (!$supports) {

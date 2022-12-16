@@ -1,5 +1,14 @@
 <?php
 
+/*
+ * This file is part of the zenstruck/callback package.
+ *
+ * (c) Kevin Bond <kevinbond@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace Zenstruck\Callback\Parameter;
 
 use Zenstruck\Callback\Argument;
@@ -25,7 +34,7 @@ final class UnionParameter extends Parameter
 
     public function type(): string
     {
-        return \implode('|', \array_map(static function(Parameter $param) { return $param->type(); }, $this->parameters));
+        return \implode('|', \array_map(static fn(Parameter $param) => $param->type(), $this->parameters));
     }
 
     protected function valueFor(Argument $argument)
