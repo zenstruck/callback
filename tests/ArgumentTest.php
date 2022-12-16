@@ -12,11 +12,10 @@ final class ArgumentTest extends TestCase
 {
     /**
      * @test
-     * @requires PHP >= 8.0
      */
     public function union_type(): void
     {
-        eval('$callback = fn(int|string $arg) => null;');
+        $callback = fn(int|string $arg) => null;
         $arg = Callback::createFor($callback)->argument(0);
 
         $this->assertSame('string|int', $arg->type());
