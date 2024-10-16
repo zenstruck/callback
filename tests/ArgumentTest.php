@@ -92,13 +92,13 @@ final class ArgumentTest extends TestCase
         $arg = Callback::createFor($callback)->argument(0);
 
         $this->assertFalse($arg->supports('string'));
-        $this->assertFalse($arg->supports(\get_class(new class() implements \Countable {
+        $this->assertFalse($arg->supports(\get_class(new class implements \Countable {
             public function count(): int
             {
                 return 0;
             }
         })));
-        $this->assertTrue($arg->supports(\get_class(new class() implements \Countable, \IteratorAggregate {
+        $this->assertTrue($arg->supports(\get_class(new class implements \Countable, \IteratorAggregate {
             public function count(): int
             {
                 return 0;
