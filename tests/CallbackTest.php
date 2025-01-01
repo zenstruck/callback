@@ -102,13 +102,11 @@ final class CallbackTest extends TestCase
     public function invoke_all_class_arguments(): void
     {
         $object = new Object2();
-        $function = static function(Object1 $object1, Object2 $object2, $object3) {
-            return [
-                'object1' => $object1,
-                'object2' => $object2,
-                'object3' => $object3,
-            ];
-        };
+        $function = static fn(Object1 $object1, Object2 $object2, $object3) => [
+            'object1' => $object1,
+            'object2' => $object2,
+            'object3' => $object3,
+        ];
 
         $actual = Callback::createFor($function)
             ->invokeAll(Parameter::union(
@@ -132,13 +130,11 @@ final class CallbackTest extends TestCase
      */
     public function invoke_all_class_arguments_value_factories(): void
     {
-        $function = static function(Object1 $object1, Object2 $object2, $object3) {
-            return [
-                'object1' => $object1,
-                'object2' => $object2,
-                'object3' => $object3,
-            ];
-        };
+        $function = static fn(Object1 $object1, Object2 $object2, $object3) => [
+            'object1' => $object1,
+            'object2' => $object2,
+            'object3' => $object3,
+        ];
         $factoryArgs = [];
         $factory = Parameter::factory(static function($arg) use (&$factoryArgs) {
             $factoryArgs[] = $arg;
@@ -223,14 +219,12 @@ final class CallbackTest extends TestCase
     public function invoke_with_resolvable_args(): void
     {
         $object = new Object2();
-        $function = static function(Object1 $object1, Object2 $object2, $object3, $extra) {
-            return [
-                'object1' => $object1,
-                'object2' => $object2,
-                'object3' => $object3,
-                'extra' => $extra,
-            ];
-        };
+        $function = static fn(Object1 $object1, Object2 $object2, $object3, $extra) => [
+            'object1' => $object1,
+            'object2' => $object2,
+            'object3' => $object3,
+            'extra' => $extra,
+        ];
 
         $actual = Callback::createFor($function)
             ->invoke(
