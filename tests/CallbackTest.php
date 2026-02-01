@@ -37,7 +37,7 @@ final class CallbackTest extends TestCase
      */
     public function invoke_all_can_enforce_min_arguments(): void
     {
-        $callback = Callback::createFor(fn() => 'ret');
+        $callback = Callback::createFor(static fn() => 'ret');
 
         $this->expectException(\ArgumentCountError::class);
 
@@ -49,7 +49,7 @@ final class CallbackTest extends TestCase
      */
     public function invoke_all_with_no_arguments(): void
     {
-        $actual = Callback::createFor(fn() => 'ret')
+        $actual = Callback::createFor(static fn() => 'ret')
             ->invokeAll(Parameter::untyped('foo'))
         ;
 
@@ -77,7 +77,7 @@ final class CallbackTest extends TestCase
      */
     public function invoke_all_untyped_argument(): void
     {
-        $actual = Callback::createFor(fn($string) => \mb_strtoupper($string))
+        $actual = Callback::createFor(static fn($string) => \mb_strtoupper($string))
             ->invokeAll(Parameter::untyped('foobar'))
         ;
 
@@ -89,7 +89,7 @@ final class CallbackTest extends TestCase
      */
     public function invoke_all_primitive_typed_argument(): void
     {
-        $actual = Callback::createFor(fn(string $string) => \mb_strtoupper($string))
+        $actual = Callback::createFor(static fn(string $string) => \mb_strtoupper($string))
             ->invokeAll(Parameter::typed('string', 'foobar'))
         ;
 
@@ -184,7 +184,7 @@ final class CallbackTest extends TestCase
      */
     public function invoke_with_no_args(): void
     {
-        $actual = Callback::createFor(fn() => 'ret')->invoke();
+        $actual = Callback::createFor(static fn() => 'ret')->invoke();
 
         $this->assertSame('ret', $actual);
     }
@@ -198,7 +198,7 @@ final class CallbackTest extends TestCase
         $this->expectExceptionMessage('Too few arguments passed to "Zenstruck\Callback\Tests\CallbackTest');
         $this->expectExceptionMessage('Expected 2, got 1.');
 
-        Callback::createFor(fn(string $string, float $float, ?int $int = null) => 'ret')->invoke('2');
+        Callback::createFor(static fn(string $string, float $float, ?int $int = null) => 'ret')->invoke('2');
     }
 
     /**
@@ -207,7 +207,7 @@ final class CallbackTest extends TestCase
     public function invoke_with_non_parameters(): void
     {
         $callback = Callback::createFor(
-            fn(string $string, float $float, ?int $int = null) => [$string, $float, $int]
+            static fn(string $string, float $float, ?int $int = null) => [$string, $float, $int]
         );
 
         $this->assertSame(['value', 3.4, null], $callback->invoke('value', 3.4));
@@ -312,7 +312,7 @@ final class CallbackTest extends TestCase
     public function is_stringable(): void
     {
         $this->assertSame('(function) strlen()', (string) Callback::createFor('strlen'));
-        $this->assertStringMatchesFormat('(closure) '.__FILE__.':%d', (string) Callback::createFor(function() {}));
+        $this->assertStringMatchesFormat('(closure) '.__FILE__.':%d', (string) Callback::createFor(static function() {}));
         $this->assertStringMatchesFormat('(closure) '.__FILE__.':%d', (string) Callback::createFor([$this, 'is_stringable']));
         $this->assertStringMatchesFormat('(closure) '.__FILE__.':%d', (string) Callback::createFor(new Object4()));
         $this->assertStringMatchesFormat('(closure) '.__FILE__.':%d', (string) Callback::createFor([Object4::class, 'staticMethod']));
@@ -324,7 +324,7 @@ final class CallbackTest extends TestCase
      */
     public function invoke_can_support_union_typehints(): void
     {
-        $callback = fn(Object1|string $arg) => 'ret';
+        $callback = static fn(Object1|string $arg) => 'ret';
 
         $this->assertSame('ret', Callback::createFor($callback)->invokeAll(Parameter::typed(Object1::class, new Object1())));
         $this->assertSame('ret', Callback::createFor($callback)->invokeAll(Parameter::typed('string', 'value')));
@@ -337,7 +337,7 @@ final class CallbackTest extends TestCase
      */
     public function can_get_callback_arguments(): void
     {
-        $callback = Callback::createFor(function(Object1 $a, $b, string $c) {});
+        $callback = Callback::createFor(static function(Object1 $a, $b, string $c) {});
 
         $this->assertSame(Object1::class, $callback->argument(0)->type());
         $this->assertNull($callback->argument(1)->type());
@@ -348,7 +348,7 @@ final class CallbackTest extends TestCase
                 null,
                 'string',
             ],
-            \array_map(fn(Argument $a) => $a->type(), $callback->arguments())
+            \array_map(static fn(Argument $a) => $a->type(), $callback->arguments())
         );
     }
 
@@ -357,7 +357,7 @@ final class CallbackTest extends TestCase
      */
     public function can_get_union_callback_arguments(): void
     {
-        $callback = fn(Object1|string $a, $b, string $c) => null;
+        $callback = static fn(Object1|string $a, $b, string $c) => null;
         $callback = Callback::createFor($callback);
 
         $this->assertSame(Object1::class.'|string', $callback->argument(0)->type());
@@ -369,7 +369,7 @@ final class CallbackTest extends TestCase
                 null,
                 'string',
             ],
-            \array_map(fn(Argument $a) => $a->type(), $callback->arguments())
+            \array_map(static fn(Argument $a) => $a->type(), $callback->arguments())
         );
     }
 
@@ -380,7 +380,7 @@ final class CallbackTest extends TestCase
     {
         $this->expectException(\OutOfRangeException::class);
 
-        Callback::createFor(function() {})->argument(0);
+        Callback::createFor(static function() {})->argument(0);
     }
 
     /**
@@ -388,8 +388,8 @@ final class CallbackTest extends TestCase
      */
     public function value_factory_injects_argument_if_type_hinted(): void
     {
-        $callback = Callback::createFor(fn(string $a, int $b, $c) => [$a, $b, $c]);
-        $factory = Parameter::factory(function(Argument $argument) {
+        $callback = Callback::createFor(static fn(string $a, int $b, $c) => [$a, $b, $c]);
+        $factory = Parameter::factory(static function(Argument $argument) {
             if ($argument->supports('string', Argument::STRICT)) {
                 return 'string';
             }
@@ -417,8 +417,8 @@ final class CallbackTest extends TestCase
      */
     public function can_use_value_factory_with_no_argument(): void
     {
-        $ret = Callback::createFor(fn($value) => $value)
-            ->invoke(Parameter::untyped(Parameter::factory(fn() => 'value')))
+        $ret = Callback::createFor(static fn($value) => $value)
+            ->invoke(Parameter::untyped(Parameter::factory(static fn() => 'value')))
         ;
 
         $this->assertSame('value', $ret);
@@ -429,10 +429,10 @@ final class CallbackTest extends TestCase
      */
     public function value_factory_can_be_used_with_union_arguments_if_no_value_factory_argument(): void
     {
-        $callback = fn(Object1|string $a) => $a;
+        $callback = static fn(Object1|string $a) => $a;
 
         $ret = Callback::createFor($callback)
-            ->invoke(Parameter::typed('string', Parameter::factory(fn() => 'value')))
+            ->invoke(Parameter::typed('string', Parameter::factory(static fn() => 'value')))
         ;
 
         $this->assertSame('value', $ret);
@@ -444,13 +444,13 @@ final class CallbackTest extends TestCase
     public function value_factory_can_be_used_with_union_arguments_as_array(): void
     {
         $array = [];
-        $factory = Parameter::factory(function(array $types) use (&$array) {
+        $factory = Parameter::factory(static function(array $types) use (&$array) {
             $array = $types;
 
             return 'value';
         });
 
-        $callback = fn(Object1|string $a) => $a;
+        $callback = static fn(Object1|string $a) => $a;
         $ret = Callback::createFor($callback)
             ->invoke(Parameter::typed('string', $factory))
         ;
@@ -466,10 +466,10 @@ final class CallbackTest extends TestCase
     {
         $this->expectException(\LogicException::class);
 
-        $callback = fn(Object1|string $a) => $a;
+        $callback = static fn(Object1|string $a) => $a;
 
         Callback::createFor($callback)
-            ->invoke(Parameter::typed('string', Parameter::factory(fn(string $type) => $type)))
+            ->invoke(Parameter::typed('string', Parameter::factory(static fn(string $type) => $type)))
         ;
     }
 
@@ -478,8 +478,8 @@ final class CallbackTest extends TestCase
      */
     public function argument_supports(): void
     {
-        $callback1 = Callback::createFor(function(?Object1 $object, string $string, int $int, $noType, float $float, bool $bool) {});
-        $callback2 = Callback::createFor(function(Object2 $object, string $string, $noType) {});
+        $callback1 = Callback::createFor(static function(?Object1 $object, string $string, int $int, $noType, float $float, bool $bool) {});
+        $callback2 = Callback::createFor(static function(Object2 $object, string $string, $noType) {});
 
         $this->assertTrue($callback1->argument(0)->supports(Object1::class));
         $this->assertTrue($callback1->argument(0)->supports(Object2::class));
@@ -542,8 +542,8 @@ final class CallbackTest extends TestCase
      */
     public function argument_allows(): void
     {
-        $callback1 = Callback::createFor(function(Object1 $object, string $string, int $int, $noType, float $float) {});
-        $callback2 = Callback::createFor(function(Object2 $object, string $string, $noType) {});
+        $callback1 = Callback::createFor(static function(Object1 $object, string $string, int $int, $noType, float $float) {});
+        $callback2 = Callback::createFor(static function(Object2 $object, string $string, $noType) {});
 
         $this->assertTrue($callback1->argument(0)->allows(new Object1()));
         $this->assertTrue($callback1->argument(0)->allows(new Object2()));
@@ -601,7 +601,7 @@ final class CallbackTest extends TestCase
      */
     public function invoke_all_union_parameter_with_defaults(): void
     {
-        $callback = Callback::createFor(fn(string $a, ?\DateTimeInterface $b = null, $c = null) => [$a, $b, $c]);
+        $callback = Callback::createFor(static fn(string $a, ?\DateTimeInterface $b = null, $c = null) => [$a, $b, $c]);
 
         $ret = $callback->invokeAll(Parameter::union(
             Parameter::typed('string', 'a')
@@ -633,7 +633,7 @@ final class CallbackTest extends TestCase
 
         $ret = $callback->invokeAll(Parameter::union(
             Parameter::typed('string', 'a'),
-            Parameter::typed(\DateTime::class, Parameter::factory(fn() => $b))
+            Parameter::typed(\DateTime::class, Parameter::factory(static fn() => $b))
         ));
 
         $this->assertSame(['a', $b, null], $ret);
@@ -644,7 +644,7 @@ final class CallbackTest extends TestCase
      */
     public function to_string_object(): void
     {
-        $callback = Callback::createFor(function(Object1 $o, string $s) {});
+        $callback = Callback::createFor(static function(Object1 $o, string $s) {});
 
         $this->assertFalse($callback->argument(0)->supports(Object5::class));
         $this->assertTrue($callback->argument(1)->supports(Object5::class));
@@ -693,7 +693,7 @@ class Object6
 {
     public static function closureSelf(): \Closure
     {
-        return fn(self $object) => $object;
+        return static fn(self $object) => $object;
     }
 }
 

@@ -31,7 +31,7 @@ final class ValueFactory
 
     public function __invoke(Argument $argument)
     {
-        $stringTypeFactory = Parameter::factory(function() use ($argument) {
+        $stringTypeFactory = Parameter::factory(static function() use ($argument) {
             if ($argument->isUnionType()) {
                 throw new \LogicException(\sprintf('ValueFactory does not support union types. Inject "%s" instead.', Argument::class));
             }

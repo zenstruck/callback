@@ -24,7 +24,7 @@ final class ArgumentTest extends TestCase
      */
     public function union_type(): void
     {
-        $callback = fn(int|string $arg) => null;
+        $callback = static fn(int|string $arg) => null;
         $arg = Callback::createFor($callback)->argument(0);
 
         $this->assertSame('string|int', $arg->type());
@@ -40,7 +40,7 @@ final class ArgumentTest extends TestCase
      */
     public function named_type(): void
     {
-        $arg = Callback::createFor(function(string $foo) {})->argument(0);
+        $arg = Callback::createFor(static function(string $foo) {})->argument(0);
 
         $this->assertSame('string', $arg->type());
         $this->assertSame('string', (string) $arg);
@@ -55,7 +55,7 @@ final class ArgumentTest extends TestCase
      */
     public function no_type(): void
     {
-        $arg = Callback::createFor(function($foo) {})->argument(0);
+        $arg = Callback::createFor(static function($foo) {})->argument(0);
 
         $this->assertNull($arg->type());
         $this->assertSame('', (string) $arg);
